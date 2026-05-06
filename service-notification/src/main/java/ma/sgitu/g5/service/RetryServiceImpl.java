@@ -19,7 +19,6 @@ public class RetryServiceImpl implements IRetryService {
     @Override
     public int nextDelaySeconds(int currentRetryCount) {
         // Backoff exponentiel : 30s, 60s, 120s
-        // (correspond aux commentaires dans IRetryService)
         return (int) (30 * Math.pow(2, currentRetryCount));
     }
 
