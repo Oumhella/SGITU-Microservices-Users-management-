@@ -1,4 +1,4 @@
-package com.serviceabonnement.config;
+ package com.serviceabonnement.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,10 +28,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Plans: Public for GET, ADMIN for others
                         .requestMatchers(HttpMethod.GET, "/plans/**").permitAll()
-                        .requestMatchers("/plans/**").hasRole("ADMIN")
+                        .requestMatchers("/plans/**").hasRole("ADMIN_G2")
                         
-                        // Abonnements: Authenticated
-                        .requestMatchers("/abonnements/admin/**").hasRole("ADMIN")
+                        // Abonnements
+                        .requestMatchers("/abonnements/paiement/confirmation").permitAll()
+                        .requestMatchers("/abonnements/remboursement/confirmation").permitAll()
+                        .requestMatchers("/abonnements/users/*/actif").permitAll()
                         .requestMatchers("/abonnements/**").authenticated()
                         
                         .requestMatchers("/actuator/**").permitAll()
@@ -42,7 +44,7 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**"
                         ).permitAll()
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
