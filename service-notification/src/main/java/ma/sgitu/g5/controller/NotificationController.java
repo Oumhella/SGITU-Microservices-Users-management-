@@ -65,7 +65,7 @@ public class NotificationController {
     })
     public ResponseEntity<Notification> getById(
             @PathVariable String notificationId) {
-        Notification n = notificationRepository.findByNotificationId(notificationId)
+        Notification n = notificationRepository.findFirstByNotificationId(notificationId)
                 .orElseThrow(() -> new IllegalArgumentException("Notification introuvable : " + notificationId));
         return ResponseEntity.ok(n);
     }
