@@ -136,18 +136,14 @@ public class TicketService {
             throw new TicketOperationException("Ticket " + ticketId + " has expired");
         }
 
+        // Appel réel au service de paiement sécurisé par Resilience4j
+        PaymentResponse paymentResponse = paymentServiceClient.pay(paymentRequest);
 
-//        PaymentResponse paymentResponse = paymentServiceClient.pay(paymentRequest);
-//
-//        if(paymentResponse.getPaymentStatus().equals("FAILED") ||
-//                paymentResponse.getInvoiceId() == null ||
-//                paymentResponse.getInvoiceNumber() == null) {
-//
-//            eventPublisher.publish(KafkaTopics.TICKET_PAYMENT_FAILED, ticket);
-//            return ticketMapper.toResponse(ticket);
-//        }
-
-
+        if (paymentResponse == null || "FAILED".equals(paymentResponse.getPaymentStatus())) {
+            eventPublisher.publish(KafkaTopics.TICKET_PAYMENT_FAILED, ticket);
+            throw new TicketOperationException("Le paiement a échoué : " +
+                    (paymentResponse != null ? paymentResponse.getMessage() : "Pas de réponse du service de paiement"));
+        }
 
         ticket.setStatus(TicketStatus.ISSUED);
         ticket.setIssuedAt(Instant.now());
@@ -184,18 +180,14 @@ public class TicketService {
 
         assertStatus(ticket, TicketStatus.ISSUED);
 
+        // Appel réel de remboursement sécurisé par Resilience4j
+        PaymentResponse paymentResponse = paymentServiceClient.refund(ticket.getId());
 
-
-//        PaymentResponse paymentResponse = paymentServiceClient.refund(ticket.getId());
-//
-//        if(paymentResponse.getPaymentStatus().equals("FAILED") ||
-//                paymentResponse.getInvoiceId() == null ||
-//                paymentResponse.getInvoiceNumber() == null) {
-//
-//            eventPublisher.publish(KafkaTopics.TICKET_REFUND_CANCELLED, ticket);
-//            return ticketMapper.toResponse(ticket);
-//        }
-
+        if (paymentResponse == null || "FAILED".equals(paymentResponse.getPaymentStatus())) {
+            eventPublisher.publish(KafkaTopics.TICKET_REFUND_CANCELLED, ticket);
+            throw new TicketOperationException("Le remboursement a échoué : " +
+                    (paymentResponse != null ? paymentResponse.getMessage() : "Pas de réponse du service de paiement"));
+        }
 
         ticket.setStatus(TicketStatus.REFUNDED);
         ticket.setRefundedAt(Instant.now());
