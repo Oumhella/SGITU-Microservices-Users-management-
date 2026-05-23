@@ -61,6 +61,8 @@ services:
       SGITU_G7_CONSUMER_GROUP: "${SGITU_G7_CONSUMER_GROUP:-g4-coordination-g7}"
       SGITU_G10_URL: "${SGITU_G10_URL:-http://g10-gateway:8080}"
       SGITU_G5_URL: "${SGITU_G5_URL:-http://g5-notifications:8085}"
+      SGITU_G3_URL: "${SGITU_G3_URL:-http://service-utilisateur:8083}"
+      SGITU_G3_VALIDATION_ENABLED: "${SGITU_G3_VALIDATION_ENABLED:-false}"
       SGITU_G1_URL: "${SGITU_G1_URL:-http://g1-billetterie:8081}"
       SGITU_G7_URL: "${SGITU_G7_URL:-http://g7-tracking:8087}"
       SGITU_G9_URL: "${SGITU_G9_URL:-http://g9-incidents:8089}"

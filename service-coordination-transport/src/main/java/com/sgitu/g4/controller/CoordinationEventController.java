@@ -39,6 +39,21 @@ public class CoordinationEventController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
+	@Operation(summary = "Créer un événement de coordination")
+	@ApiResponses({
+			@ApiResponse(responseCode = "201", description = "Événement créé (mission inchangée)"),
+			@ApiResponse(responseCode = "404", description = "Mission introuvable")
+	})
+	@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(examples = @ExampleObject(value = """
+			{
+			  "type": "RETARD",
+			  "status": "SIGNALE",
+			  "missionId": 1,
+			  "vehiculeId": "VH-001",
+			  "description": "Retard signalé manuellement",
+			  "occurredAt": "2026-05-20T10:15:00Z"
+			}
+			""")))
 	public CoordinationEventResponse create(@Valid @RequestBody CoordinationEventRequest request) {
 		return coordinationEventService.create(request);
 	}
@@ -65,6 +80,14 @@ public class CoordinationEventController {
 
 	@PostMapping("/detect-delay")
 	@ResponseStatus(HttpStatus.CREATED)
+	@Operation(summary = "Détecter un retard (n'interrompt pas la mission)")
+	@ApiResponses({
+			@ApiResponse(responseCode = "201", description = "Événement RETARD créé"),
+			@ApiResponse(responseCode = "404", description = "Mission introuvable")
+	})
+	@io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(examples = @ExampleObject(value = """
+			{"missionId": 1, "retardMinutes": 12, "cause": "Trafic dense zone centre"}
+			""")))
 	public CoordinationEventResponse detectDelay(@Valid @RequestBody DetectDelayRequest request) {
 		return coordinationEventService.detectDelay(request);
 	}

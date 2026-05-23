@@ -14,6 +14,7 @@ import com.sgitu.g4.exception.ConflictException;
 import com.sgitu.g4.exception.ForbiddenOperationException;
 import com.sgitu.g4.exception.ResourceNotFoundException;
 import com.sgitu.g4.integration.G1BilletterieClient;
+import com.sgitu.g4.integration.G3UserClient;
 import com.sgitu.g4.integration.G7VehicleClient;
 import com.sgitu.g4.mapper.EntityMapper;
 import com.sgitu.g4.repository.AffectationRepository;
@@ -43,11 +44,13 @@ public class MissionService {
 	private final AffectationRepository affectationRepository;
 	private final G1BilletterieClient g1BilletterieClient;
 	private final G7VehicleClient g7VehicleClient;
+	private final G3UserClient g3UserClient;
 	private final SupervisionLogService supervisionLogService;
 
 	@Transactional
 	public MissionResponse create(MissionRequest request) {
 		assertVehicleAvailableForActiveMission(request.getVehiculeId().trim(), null, request.getStatut());
+		g3UserClient.assertDriverExistsIfEnabled(request.getChauffeurId());
 		Ligne ligne = ligneRepository.findById(request.getLigneId())
 				.orElseThrow(() -> new ResourceNotFoundException("Ligne introuvable : " + request.getLigneId()));
 		Trajet trajet = resolveTrajet(request.getTrajetId(), ligne);
@@ -102,6 +105,7 @@ public class MissionService {
 		}
 		StatutMission oldStatus = mission.getStatut();
 		assertVehicleAvailableForActiveMission(request.getVehiculeId().trim(), id, request.getStatut());
+		g3UserClient.assertDriverExistsIfEnabled(request.getChauffeurId());
 		Ligne ligne = ligneRepository.findById(request.getLigneId())
 				.orElseThrow(() -> new ResourceNotFoundException("Ligne introuvable : " + request.getLigneId()));
 		mission.setVehiculeId(request.getVehiculeId().trim());

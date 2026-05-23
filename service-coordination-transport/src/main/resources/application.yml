@@ -45,8 +45,12 @@ sgitu:
     secret: ${SGITU_JWT_SECRET:SGlUVS1HNC1KV1QtU0VDUkVOLURFVl8xMjhCaXRzX19VU0VfRU5WX1ZBUiMjIw==}
     expiration-ms: ${SGITU_JWT_EXPIRATION_MS:86400000}
   integration:
-    # Billetterie = G1. Les variables SGITU_G3_* restent acceptées (rétrocompat).
-    g1-base-url: ${SGITU_G1_URL:${SGITU_G3_URL:http://localhost:8083}}
+    g3-base-url: ${SGITU_G3_URL:http://localhost:8083}
+    g3-validation-enabled: ${SGITU_G3_VALIDATION_ENABLED:false}
+    g3-validation-strict: ${SGITU_G3_VALIDATION_STRICT:false}
+    g3-drivers-ids-path: ${SGITU_G3_DRIVERS_IDS_PATH:/api/users/drivers/ids}
+    # Billetterie = G1. Les variables SGITU_G3_* mission restent acceptées (rétrocompat).
+    g1-base-url: ${SGITU_G1_URL:http://localhost:8081}
     g5-base-url: ${SGITU_G5_URL:http://localhost:8085}
     g7-base-url: ${SGITU_G7_URL:http://localhost:8087}
     g9-base-url: ${SGITU_G9_URL:http://localhost:8089}

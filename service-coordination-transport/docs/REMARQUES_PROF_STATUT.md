@@ -20,7 +20,7 @@
 | 6 | `/health` + `/logs` sans token | **Fait** — `SecurityConfig` permitAll sur `/api/g4/logs` |
 | 7 | Docker Kafka | **Fait** — `apache/kafka:3.7.0`, `KAFKA_ADVERTISED_LISTENERS: kafka:9092` |
 | 8 | Diagramme Mission ↔ événements | **Fait** — `docs/diagrams/mission-coordination-events.puml` |
-| 9 | Flèche G4 → G3 | **Fait** — diagramme architecture + texte rapport |
+| 9 | Flèche G4 → G3 | **Fait** — `G3UserClient` (optionnel) + diagramme + `README.md` |
 | 10 | Positions G7 Kafka | **Déjà OK** — `G7VehiclePositionKafkaConsumer`, topic `vehicule-positions` |
 
 ## C. Notes rapport (image « en cours / perspectives »)
