@@ -64,7 +64,7 @@ Le code utilise **G1** pour la billetterie côté Kafka (`G1BilletterieClient`, 
 | Events | `POST /api/g4/events/detect-delay` | `CoordinationEventController` | Conforme |
 | Events | `POST /api/g4/events/detect-deviation` | `CoordinationEventController` | Conforme |
 | Events | `POST /api/g4/events/detect-breakdown` | `CoordinationEventController` | Conforme |
-| Events | `POST /api/g4/events/detect-incident` | `CoordinationEventController` | Conforme |
+| Incidents G9 | `POST /api/g4/incident-impacts` | `IncidentImpactController` | Conforme (séparé des événements coordination) |
 | Events | `POST /api/g4/events/cancel-mission` | `CoordinationEventController` | Conforme |
 | Notifications | `POST /api/notifications/send` | `NotificationController` | Conforme (`202 Accepted`) |
 | Supervision | `GET /api/g4/health` | `G4SupervisionController` | Conforme |

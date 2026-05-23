@@ -80,6 +80,8 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.POST, "/api/g4/events", "/api/g4/events/**").hasAnyRole(G4_FLEET_WRITE)
 						.requestMatchers(HttpMethod.PUT, "/api/g4/events", "/api/g4/events/**").hasAnyRole(G4_FLEET_WRITE)
 						.requestMatchers(HttpMethod.DELETE, "/api/g4/events", "/api/g4/events/**").hasAnyRole(G4_FLEET_WRITE)
+						.requestMatchers(HttpMethod.POST, "/api/g4/incident-impacts", "/api/g4/incident-impacts/**").hasAnyRole(G4_FLEET_WRITE)
+						.requestMatchers(HttpMethod.GET, "/api/g4/incident-impacts", "/api/g4/incident-impacts/**").hasAnyRole(G4_READ)
 						.requestMatchers(HttpMethod.POST, "/api/notifications/send").hasAnyRole(G4_FLEET_WRITE)
 						.anyRequest().authenticated()
 				)

@@ -66,8 +66,9 @@ Exemples JSON : `postman/examples/`
 
 | Groupe | Mode | Topic / API |
 |--------|------|-------------|
-| G7 | Kafka consumer | `vehicule-positions` |
-| G9 | Kafka consumer | `incident.transport.topic` |
+| G7 | Kafka consumer | `vehicule-positions` → événements coordination (ex. DEVIATION) |
+| G9 | Kafka consumer | `incident.transport.topic` → table `mission_incident_impacts` |
+| G4 | REST | `POST /api/g4/incident-impacts` — lien mission ↔ référence incident G9 |
 | G1 | Kafka producer | `missions-lifecycle` |
 | G5 | HTTP | notifications (fallback `DEGRADED` si injoignable) |
 | G3 | HTTP optionnel | validation `chauffeurId` — voir ci-dessous |

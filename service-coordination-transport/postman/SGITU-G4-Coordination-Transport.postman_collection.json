@@ -296,7 +296,7 @@
 					}
 				},
 				{
-					"name": "POST detect-incident",
+					"name": "POST incident-impact (G9)",
 					"request": {
 						"method": "POST",
 						"header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -304,7 +304,7 @@
 							"mode": "raw",
 							"raw": "{\n  \"incidentReference\": \"G9-INC-2026-042\",\n  \"missionId\": 1,\n  \"vehiculeId\": \"VH-001\",\n  \"resume\": \"Incident confirmé par G9 — voie réduite\"\n}"
 						},
-						"url": "{{baseUrl}}/api/g4/events/detect-incident"
+						"url": "{{baseUrl}}/api/g4/incident-impacts"
 					}
 				},
 				{

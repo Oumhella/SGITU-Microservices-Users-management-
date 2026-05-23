@@ -6,7 +6,6 @@ import com.sgitu.g4.dto.CoordinationEventResponse;
 import com.sgitu.g4.dto.DetectBreakdownRequest;
 import com.sgitu.g4.dto.DetectDelayRequest;
 import com.sgitu.g4.dto.DetectDeviationRequest;
-import com.sgitu.g4.dto.DetectIncidentRequest;
 import com.sgitu.g4.entity.CoordinationEventStatus;
 import com.sgitu.g4.entity.CoordinationEventType;
 import com.sgitu.g4.service.CoordinationEventService;
@@ -110,12 +109,6 @@ public class CoordinationEventController {
 	@ResponseStatus(HttpStatus.CREATED)
 	public CoordinationEventResponse detectBreakdown(@Valid @RequestBody DetectBreakdownRequest request) {
 		return coordinationEventService.detectBreakdown(request);
-	}
-
-	@PostMapping("/detect-incident")
-	@ResponseStatus(HttpStatus.CREATED)
-	public CoordinationEventResponse detectIncident(@Valid @RequestBody DetectIncidentRequest request) {
-		return coordinationEventService.detectIncident(request);
 	}
 
 	@PostMapping("/cancel-mission")

@@ -18,7 +18,8 @@ class CoordinationEventEntity {
 Mission "1" -- "0..*" CoordinationEventEntity : génère / subit
 
 note right of CoordinationEventEntity
-  RETARD, DEVIATION, PANNE, INCIDENT…
+  RETARD, DEVIATION, PANNE, ANNULATION_MISSION
+  (incidents G9 : voir MissionIncidentImpact)
   Ne bloque pas automatiquement la mission
 end note
 
