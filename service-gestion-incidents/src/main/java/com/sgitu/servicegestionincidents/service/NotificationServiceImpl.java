@@ -113,7 +113,7 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
         NotificationEvent.Recipient recipient = NotificationEvent.Recipient.builder()
-                .userId("ROLE_SUPERVISEUR_INCIDENTS")
+                .userId("ROLE_DISPATCHER")
                 .phone("+212600112233") // fallback superviseur
                 .build();
 
@@ -135,8 +135,8 @@ public class NotificationServiceImpl implements NotificationService {
         metadata.put("localisation", incident.getLocalisation().getLatitude() + "," + incident.getLocalisation().getLongitude());
 
         NotificationEvent.Recipient recipient = NotificationEvent.Recipient.builder()
-                .userId("ROLE_DIRECTION")
-                .email("direction@sgitu.ma") // fallback direction
+                .userId("ROLE_DISPATCHER")
+                .email("superviseur@sgitu.ma") // fallback superviseur
                 .build();
 
         NotificationEvent event = buildBaseEvent("INCIDENT_ESCALATED", "EMAIL", "HIGH", recipient)

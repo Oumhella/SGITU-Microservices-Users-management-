@@ -18,4 +18,5 @@ public interface IncidentService {
     void affecterResponsable(Long id, Long responsableId, Long auteurId);
     void mettreAJourStatut(Long id, StatutIncident statut, Long auteurId);
     void annulerIncident(Long id, String motif, Long auteurId);
+    void ajouterRenfort(Long incidentId, Long agentId, Long auteurId);
 }
