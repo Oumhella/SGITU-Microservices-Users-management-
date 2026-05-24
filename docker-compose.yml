@@ -125,11 +125,111 @@ services:
       - users-db-network
 
   # ---------------------------------------------------------------
-  #  G4 — (ajoutez votre service ici)
+  #  G4 — Service Coordination Transport (port 8084)
   # ---------------------------------------------------------------
+  g4-coordination:
+    build:
+      context: ./service-coordination-transport
+      dockerfile: Dockerfile
+    container_name: g4-coordination-service
+    hostname: g4-coordination
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: "8084"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://g4-postgres:5432/${g4_DB_NAME:-sgitu_g4}
+      SPRING_DATASOURCE_USERNAME: ${g4_DB_USER:-g4}
+      SPRING_DATASOURCE_PASSWORD: ${g4_DB_PASSWORD:-g4}
+      JPA_DDL_AUTO: update
+      SGITU_KAFKA_ENABLED: "true"
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SGITU_JWT_SECRET: ${JWT_SECRET:-SGlUVS1HNC1KV1QtU0VDUkVOLURFVl8xMjhCaXRzX19VU0VfRU5WX1ZBUiMjIw==}
+      SGITU_G3_URL: http://g3-user-service:8083
+      SGITU_G5_URL: http://notification-service:8085
+      SGITU_G10_URL: http://notification-service:8085
+      SGITU_G7_URL: http://g7-service:8087
+      SGITU_G1_URL: ${G1_BASE_URL:-http://g1-billetterie:8081}
+      SGITU_G9_URL: ${G9_BASE_URL:-http://g9-incidents:8089}
+      SGITU_G3_VALIDATION_ENABLED: ${SGITU_G3_VALIDATION_ENABLED:-false}
+    depends_on:
+      g4-postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - sgitu-network
+      - g4-db-network
+
+  g4-postgres:
+    image: postgres:16-alpine
+    container_name: g4-postgres
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: ${g4_DB_NAME:-sgitu_g4}
+      POSTGRES_USER: ${g4_DB_USER:-g4}
+      POSTGRES_PASSWORD: ${g4_DB_PASSWORD:-g4}
+    volumes:
+      - g4_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${g4_DB_USER:-g4} -d ${g4_DB_NAME:-sgitu_g4}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - g4-db-network
 
   # ---------------------------------------------------------------
-  #  G5 — (ajoutez votre service ici)
+  #  G5 — Service Notifications (port 8085)
+  # ---------------------------------------------------------------
+  mysql-notification:
+    image: mysql:8.0
+    container_name: sgitu-mysql-notification
+    hostname: mysql-notification
+    ports:
+      - "3314:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${notification_MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: notifications_db
+      MYSQL_USER: sgitu
+      MYSQL_PASSWORD: ${notification_MYSQL_PASSWORD:-sgitu}
+    volumes:
+      - notification_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${notification_MYSQL_ROOT_PASSWORD:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - sgitu-network
+
+  notification-service:
+    build:
+      context: ./service-notification
+      dockerfile: Dockerfile
+    container_name: g5-notification-service
+    hostname: notification-service
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-notification:3306/notifications_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: sgitu
+      SPRING_DATASOURCE_PASSWORD: ${notification_MYSQL_PASSWORD:-sgitu}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      JWT_SECRET: ${JWT_SECRET:-SGlUVS1HNC1KV1QtU0VDUkVOLURFVl8xMjhCaXRzX19VU0VfRU5WX1ZBUiMjIw==}
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      mysql-notification:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - sgitu-network
+
+  # ---------------------------------------------------------------
+  #  G5 — (legacy placeholder supprimé)
   # ---------------------------------------------------------------
 
   # ---------------------------------------------------------------
@@ -243,9 +343,13 @@ networks:
     driver: bridge
   g7-db-network:
     driver: bridge
+  g4-db-network:
+    driver: bridge
 
 volumes:
   g3_users_data:
   abonnement_data:
   g7_db_data:
+  g4_pg_data:
+  notification_mysql_data:
   kafka_data:

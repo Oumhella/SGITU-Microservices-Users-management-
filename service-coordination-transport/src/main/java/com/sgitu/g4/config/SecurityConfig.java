@@ -56,6 +56,7 @@ public class SecurityConfig {
 								"/swagger-ui/index.html"
 						).permitAll()
 						.requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
+						.requestMatchers(HttpMethod.GET, "/actuator/prometheus", "/actuator/info").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/v1/operator/status").hasAnyRole(G4_SUPERVISION)
 						.requestMatchers(HttpMethod.GET, "/api/v1/**").hasAnyRole(G4_READ)
 						.requestMatchers(HttpMethod.GET, "/api/g4/**").hasAnyRole(G4_READ)
@@ -82,6 +83,8 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.DELETE, "/api/g4/events", "/api/g4/events/**").hasAnyRole(G4_FLEET_WRITE)
 						.requestMatchers(HttpMethod.POST, "/api/g4/incident-impacts", "/api/g4/incident-impacts/**").hasAnyRole(G4_FLEET_WRITE)
 						.requestMatchers(HttpMethod.GET, "/api/g4/incident-impacts", "/api/g4/incident-impacts/**").hasAnyRole(G4_READ)
+						.requestMatchers(HttpMethod.GET, "/api/g4/pending-notifications").hasAnyRole(G4_SUPERVISION)
+						.requestMatchers(HttpMethod.POST, "/api/g4/pending-notifications", "/api/g4/pending-notifications/**").hasAnyRole(G4_SUPERVISION)
 						.requestMatchers(HttpMethod.POST, "/api/notifications/send").hasAnyRole(G4_FLEET_WRITE)
 						.anyRequest().authenticated()
 				)

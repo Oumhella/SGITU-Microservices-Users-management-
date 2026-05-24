@@ -15,7 +15,9 @@
 		{ "key": "affectationId", "value": "1" },
 		{ "key": "missionId", "value": "1" },
 		{ "key": "eventId", "value": "1" },
-		{ "key": "vehiculeId", "value": "VH-001" }
+		{ "key": "vehiculeId", "value": "VH-001" },
+		{ "key": "g3BaseUrl", "value": "http://localhost:8083" },
+		{ "key": "g3AccessToken", "value": "" }
 	],
 	"auth": {
 		"type": "bearer",
@@ -357,14 +359,104 @@
 				{
 					"name": "GET logs supervision",
 					"request": {
+						"auth": { "type": "noauth" },
 						"method": "GET",
 						"url": "{{baseUrl}}/api/g4/logs"
+					}
+				},
+				{
+					"name": "GET actuator prometheus (public)",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"url": "{{baseUrl}}/actuator/prometheus"
 					}
 				}
 			]
 		},
 		{
-			"name": "10 — Cas d erreur (exemples)",
+			"name": "99 — Validation croisée",
+			"item": [
+				{
+					"name": "G3 — Login (JWT inter-groupe)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  pm.collectionVariables.set('g3AccessToken', pm.response.json().token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+						},
+						"url": "{{g3BaseUrl}}/api/auth/login",
+						"description": "Adapter identifiants G3. Capturer cette requête + la suivante pour le pilier 3."
+					}
+				},
+				{
+					"name": "G4 — GET missions avec JWT G3",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{ "key": "token", "value": "{{g3AccessToken}}", "type": "string" }]
+						},
+						"method": "GET",
+						"url": "{{baseUrl}}/api/g4/missions",
+						"description": "Preuve validation croisée : token G3 accepté par G4 → 200."
+					}
+				}
+			]
+		},
+		{
+			"name": "100 — Chaos Monkey (G5 down)",
+			"item": [
+				{
+					"name": "POST notification (fallback DEGRADED)",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"notificationId\": \"NOTIF-CHAOS-001\",\n  \"sourceService\": \"G4\",\n  \"eventType\": \"RETARD\",\n  \"channel\": \"EMAIL\",\n  \"recipient\": {\n    \"userId\": \"user-1\",\n    \"email\": \"test@sgitu.local\"\n  },\n  \"metadata\": {\n    \"lineId\": \"L12\",\n    \"reason\": \"Chaos Monkey test\"\n  }\n}"
+						},
+						"url": "{{baseUrl}}/api/notifications/send",
+						"description": "Couper G5 avant : docker stop g5-notification-service"
+					}
+				},
+				{
+					"name": "GET pending notifications",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+						},
+						"method": "GET",
+						"url": "{{baseUrl}}/api/g4/pending-notifications",
+						"description": "Utiliser login admin.technique (ADMIN_G4) si 403."
+					}
+				},
+				{
+					"name": "POST retry pending now",
+					"request": {
+						"method": "POST",
+						"url": "{{baseUrl}}/api/g4/pending-notifications/retry"
+					}
+				}
+			]
+		},
+		{
+			"name": "11 — Cas d erreur (exemples)",
 			"item": [
 				{
 					"name": "GET ligne inexistante → 404",

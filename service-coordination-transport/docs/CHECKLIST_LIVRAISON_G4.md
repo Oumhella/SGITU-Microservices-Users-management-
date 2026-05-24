@@ -24,7 +24,7 @@ Légende : `[x]` fait · `[ ]` à faire · `[~]` en cours / partiel
 | 1 | Codes HTTP Swagger alignés (201, 400, 401, 403, 404, **409**) | [x] | [ ] capture Swagger `POST /missions` | [ ] test 409 même véhicule |
 | 2 | Exemples JSON payloads complexes (mission, retard, déviation, notif, event) | [x] | [ ] cités dans rapport | [ ] collection à jour |
 | 3 | Retards / déviations **sans bloquer** mission (reste EN_COURS) | [x] | [ ] expliqué § métier | [ ] retard puis GET mission |
-| 4 | Résilience (Resilience4j / fallback) — évolution ou bonus | [ ] | [ ] paragraphe « perspectives » | [ ] démo Chaos (optionnel) |
+| 4 | Résilience (Resilience4j / fallback) — évolution ou bonus | [x] | [ ] `docs/RESILIENCE_G4.md` | [ ] démo Chaos (`docs/CHAOS_MONKEY_G4.md`) |
 | 5 | Rôles synchronisés G3 / G10 / G4 | [x] | [ ] tableau rôles dans rapport | [ ] login + JWT dans capture |
 | 6 | Monitoring `/health` + `/logs` **sans token** | [x] | [ ] § supervision | [ ] GET logs sans Authorization |
 | 7 | Docker : pas `localhost` pour Kafka ; image `apache/kafka:3.7.0` | [x] | [ ] § DevOps | [ ] `docker compose up` OK |
@@ -37,6 +37,34 @@ Légende : `[x]` fait · `[ ]` à faire · `[~]` en cours / partiel
 ---
 
 ## PARTIE 2 — Livraison finale (consigne officielle 29 mai)
+
+> Guide complet : **`docs/3_PILIERS_LIVRAISON_G4.md`**
+
+### Pilier 1 — Intégration sans couture
+
+- [x] Réseau Docker `sgitu-network` — G4 dans `../docker-compose.yml` racine
+- [x] Stack autonome `docker-compose.full-stack.yml` (G4 + G5 + Kafka + monitoring)
+- [ ] Test inter-groupes avec capture `docker network inspect sgitu-network`
+
+### Pilier 2 — Observabilité
+
+- [x] `/api/g4/health` + `/api/g4/logs` (publics)
+- [x] Actuator + Prometheus (`/actuator/prometheus`)
+- [x] Grafana dashboard `monitoring/grafana/`
+- [ ] Captures dans `rapport/captures/`
+
+### Pilier 3 — Validation croisée
+
+- [x] Collection Postman dossier « 99 — Validation croisée »
+- [x] Doc `docs/VALIDATION_CROISEE_G4.md`
+- [ ] Capture Postman JWT G3 → G4 (ou G10 → G4)
+
+### Chaos Monkey (bonus)
+
+- [x] Fallback G5 → DEGRADED + file `pending_notifications`
+- [x] Retry automatique + `POST /api/g4/pending-notifications/retry`
+- [x] Collection Postman « 100 — Chaos Monkey »
+- [ ] Captures démo soutenance
 
 ### A. Rapport final (PDF)
 
@@ -106,16 +134,16 @@ Légende : `[x]` fait · `[ ]` à faire · `[~]` en cours / partiel
 
 ### Priorités intégration
 
-- [ ] Contrats alignés — **mêmes topics** et JSON avec G1, G7, G9 (`vehicule-positions`, `missions-lifecycle`, `incident.transport.topic`)
+- [x] Contrats alignés — **mêmes topics** et JSON avec G1, G7, G9 — voir `docs/CONTRATS_ALIGNES_G4.md` + `KafkaContractValidator`
 - [ ] Réseau Docker partagé `sgitu-network` — test avec au moins **un autre groupe**
 - [ ] **Validation croisée** — capture Postman : JWT valide (idéalement via **G10**) → appel G4 réussi
 - [ ] Auth harmonisée G3 (Users) + G10 (Gateway) — même `jwt.secret` en intégration
 
 ### Challenge « Chaos Monkey » (fortement valorisé)
 
-- [ ] Choisir **un** appel critique (ex. notification **G5** ou billetterie **G1**)
-- [ ] Comportement si service down : pas de 500 brut, message clair ou file d’attente / retry
-- [ ] Préparer démo soutenance : prof peut **éteindre** un conteneur voisin
+- [x] Choisir **un** appel critique (ex. notification **G5** ou billetterie **G1**) — G5 via `G5NotificationClient`
+- [x] Comportement si service down : pas de 500 brut, statut **`DEGRADED`** (Resilience4j)
+- [ ] Préparer démo soutenance : prof peut **éteindre** un conteneur voisin — scénario `docs/CHAOS_MONKEY_G4.md`
 
 ---
 

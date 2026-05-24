@@ -125,8 +125,8 @@ Tout document d’interface doit désigner **G1** pour les actions commerciales 
 | Exigence | Implémentation | Statut |
 |---|---|---|
 | Kafka topic `incident.transport.topic` | `G9IncidentKafkaConsumer` | Conforme |
-| Mapping du payload JSON G9 | `G9IncidentKafkaMessage` + mapping vers `CoordinationEventRequest` | Conforme |
-| Mapping statuts/types vers événements G4 | `mapType` / `mapStatus` | Conforme |
+| Mapping du payload JSON G9 | `G9IncidentKafkaMessage` → `MissionIncidentImpact` | Conforme |
+| Validation contrat JSON Kafka | `KafkaContractValidator` | Conforme |
 
 ## 5 bis) Rôles synchronisés G3 / G10 / G4
 

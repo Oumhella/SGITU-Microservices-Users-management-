@@ -10,9 +10,25 @@ Microservice **G4** : gestion du réseau (lignes, trajets, arrêts, horaires), d
 
 ## Démarrage rapide (Docker)
 
+**Stack G4 seule :**
+
 ```bash
 cd service-coordination-transport
 docker compose up -d --build
+```
+
+**Stack complète G4 + G5 + monitoring (3 piliers livraison) :**
+
+```bash
+docker compose -f docker-compose.full-stack.yml up -d --build
+```
+
+**Monorepo SGITU (réseau `sgitu-network` avec G3, G7…) :**
+
+```bash
+cd ..
+cp .env.example .env
+docker compose up -d --build g4-coordination g4-postgres notification-service kafka
 ```
 
 | Service | URL |
@@ -21,6 +37,8 @@ docker compose up -d --build
 | Swagger | http://localhost:8084/swagger-ui.html |
 | Health (sans token) | http://localhost:8084/api/g4/health |
 | Logs supervision (sans token) | http://localhost:8084/api/g4/logs |
+| Prometheus | http://localhost:9090 |
+| Grafana | http://localhost:3000 (admin/admin) |
 | PostgreSQL | localhost:5434 |
 | Kafka | localhost:9092 |
 
@@ -102,9 +120,11 @@ Si G3 retourne `[]`, aucun conducteur n’est enregistré avec `ROLE_DRIVER` —
 
 ## Documentation
 
+- **3 piliers livraison finale** : `docs/3_PILIERS_LIVRAISON_G4.md`
+- Observabilité : `docs/OBSERVABILITE_G4.md`
+- Validation croisée : `docs/VALIDATION_CROISEE_G4.md`
+- Chaos Monkey : `docs/CHAOS_MONKEY_G4.md`
 - Checklist livraison : `docs/CHECKLIST_LIVRAISON_G4.md`
-- Remarques prof : `docs/REMARQUES_PROF_STATUT.md`
-- Explication simple : `docs/EXPLICATION_REMARQUES_PROF.md`
 
 ## Variables d'environnement (production)
 

@@ -29,6 +29,7 @@ public class G9IncidentKafkaConsumer {
 	public void onIncidentMessage(String rawMessage) {
 		try {
 			G9IncidentKafkaMessage message = objectMapper.readValue(rawMessage, G9IncidentKafkaMessage.class);
+			KafkaContractValidator.validateG9Incident(message);
 			incidentImpactService.recordFromG9Kafka(message, rawMessage);
 			supervisionLogService.add("INFO", "KAFKA-G9",
 					"Impact incident ref=" + message.getReferenceIncident()

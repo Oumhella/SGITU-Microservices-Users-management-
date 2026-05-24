@@ -34,6 +34,7 @@ Les rôles sont **définis et stockés dans G3** (`service-utilisateur`). G10 é
 | Lecture `GET /api/g4/**`, `GET /api/v1/**` | `OPERATOR`, `DISPATCHER`, `ADMIN_G4`, `ADMIN` |
 | CRUD lignes / trajets / arrêts / horaires | `OPERATOR`, `ADMIN_G4`, `ADMIN` |
 | CRUD missions / affectations / events / notifications | `DISPATCHER`, `ADMIN_G4`, `ADMIN` |
+| CRUD **incident-impacts** (`/api/g4/incident-impacts`) | `DISPATCHER`, `ADMIN_G4`, `ADMIN` |
 | Supervision `GET /api/v1/operator/status` | `ADMIN_G4`, `ADMIN` |
 | Public sans token | `/api/auth/login`, `/api/g4/health`, **`/api/g4/logs`**, Swagger, `GET /actuator/health` |
 
@@ -47,5 +48,5 @@ Secret JWT : **même valeur** que G3/G10 (`jwt.secret` dans `application.yml`).
 
 ## Évolution
 
-- Validation **live** du `chauffeurId` via `GET /users/{id}/exists` (G3) à la création de mission.
+- Validation **live** du `chauffeurId` via `GET /api/users/drivers/ids` (G3) — `G3UserClient`, flag `g3-validation-enabled`.
 - Comptes démo in-memory : **dev uniquement** ; en intégration, token émis par G10 uniquement.
