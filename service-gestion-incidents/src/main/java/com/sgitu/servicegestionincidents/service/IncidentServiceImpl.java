@@ -115,6 +115,46 @@ public class IncidentServiceImpl implements IncidentService {
         notificationService.envoyerChangementStatut(incident, ancienStatut.name());
     }
 
+    @Override
+    public void ajouterRenfort(Long incidentId, Long agentId, Long auteurId) {
+        log.info("Ajout du renfort {} à l'incident {} par {}", agentId, incidentId, auteurId);
+
+        Incident incident = trouverIncidentOuErreur(incidentId);
+
+        // L'ajout de renforts ne peut se faire que sur un incident en cours
+        if (incident.getStatut() != StatutIncident.ASSIGNE &&
+                incident.getStatut() != StatutIncident.EN_TRAITEMENT &&
+                incident.getStatut() != StatutIncident.ESCALADE) {
+            throw new IllegalStateTransitionException(
+                    String.format("Impossible d'ajouter un renfort : l'incident %s est en statut %s.",
+                            incident.getReference(), incident.getStatut()));
+        }
+
+        com.sgitu.servicegestionincidents.model.entity.Renfort renfort = com.sgitu.servicegestionincidents.model.entity.Renfort.builder()
+                .agentId(agentId)
+                .auteurAffectationId(auteurId)
+                .dateAffectation(LocalDateTime.now())
+                .build();
+        
+        incident.addRenfort(renfort);
+
+        // Enregistrer l'action dans l'historique
+        Action action = Action.builder()
+                .type(TypeAction.ASSIGNATION)
+                .description(String.format("Renfort ajouté (agent %d)", agentId))
+                .auteurId(auteurId)
+                .dateAction(LocalDateTime.now())
+                .ancienStatut(incident.getStatut())
+                .nouveauStatut(incident.getStatut())
+                .build();
+        incident.addAction(action);
+
+        incidentRepository.save(incident);
+        log.info("Renfort {} ajouté à l'incident {}", agentId, incident.getReference());
+
+        // Notifier le renfort spécifiquement
+    }
+
     // ============================================================
     // Task 1.3 — mettreAJourStatut()
     // Transitions EN_TRAITEMENT et RESOLU avec vérification
@@ -223,6 +263,7 @@ public class IncidentServiceImpl implements IncidentService {
 
         StatutIncident ancienStatut = incident.getStatut();
         incident.setStatut(StatutIncident.CLOTURE);
+        incident.setMotifCloture(motif);
 
         // Enregistrer la clôture dans l'historique
         Action action = Action.builder()
@@ -264,6 +305,7 @@ public class IncidentServiceImpl implements IncidentService {
 
         StatutIncident ancienStatut = incident.getStatut();
         incident.setStatut(StatutIncident.ANNULE);
+        incident.setMotifAnnulation(motif);
 
         // Enregistrer l'annulation dans l'historique
         Action action = Action.builder()

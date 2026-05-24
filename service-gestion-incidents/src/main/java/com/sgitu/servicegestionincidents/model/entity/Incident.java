@@ -62,6 +62,12 @@ public class Incident {
     // Référence parent pour les accidents multi-véhicules (Task 1.7)
     private String incidentParentRef;
 
+    @Column(length = 500)
+    private String motifAnnulation;
+
+    @Column(length = 500)
+    private String motifCloture;
+
     // Flag pour savoir si G4 (Transport) a déjà été notifié (pour le edge-case REJETE)
     @Builder.Default
     private boolean transportNotifie = false;
@@ -81,6 +87,10 @@ public class Incident {
     @OneToMany(mappedBy = "incident", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Action> actions = new ArrayList<>();
+
+    @OneToMany(mappedBy = "incident", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Renfort> renforts = new ArrayList<>();
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
@@ -113,5 +123,10 @@ public class Incident {
     public void addAction(Action action) {
         actions.add(action);
         action.setIncident(this);
+    }
+
+    public void addRenfort(Renfort renfort) {
+        renforts.add(renfort);
+        renfort.setIncident(this);
     }
 }

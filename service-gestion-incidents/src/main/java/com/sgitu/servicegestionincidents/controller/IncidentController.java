@@ -25,7 +25,7 @@ public class IncidentController {
     private final IncidentService incidentService;
 
     @PostMapping("/signaler")
-    @PreAuthorize("hasAnyRole('VOYAGEUR', 'CONDUCTEUR', 'SUPERVISEUR_INCIDENTS')")
+    @PreAuthorize("hasAnyRole('ROLE_PASSENGER', 'ROLE_DRIVER', 'ROLE_DISPATCHER')")
     @Operation(summary = "Signaler un nouvel incident")
     public ResponseEntity<SignalementResponseDTO> signalerIncident(
             @Valid @RequestBody SignalementRequestDTO request,
@@ -36,7 +36,7 @@ public class IncidentController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('VOYAGEUR', 'CONDUCTEUR', 'AGENT_INCIDENTS', 'SUPERVISEUR_INCIDENTS')")
+    @PreAuthorize("hasAnyRole('ROLE_PASSENGER', 'ROLE_DRIVER', 'ROLE_TECHNICIAN', 'ROLE_DISPATCHER')")
     @Operation(summary = "Consulter un incident par ID")
     public ResponseEntity<IncidentResponseDTO> consulterIncident(@PathVariable Long id) {
         IncidentResponseDTO incident = incidentService.consulterIncident(id);
@@ -44,7 +44,7 @@ public class IncidentController {
     }
 
     @GetMapping("/{id}/suivi")
-    @PreAuthorize("hasAnyRole('AGENT_INCIDENTS', 'SUPERVISEUR_INCIDENTS')")
+    @PreAuthorize("hasAnyRole('ROLE_TECHNICIAN', 'ROLE_DISPATCHER')")
     @Operation(summary = "Consulter l'historique d'un incident")
     public ResponseEntity<List<ActionDTO>> consulterSuivi(@PathVariable Long id) {
         List<ActionDTO> historique = incidentService.consulterSuivi(id);
@@ -52,7 +52,7 @@ public class IncidentController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('AGENT_INCIDENTS', 'SUPERVISEUR_INCIDENTS')")
+    @PreAuthorize("hasAnyRole('ROLE_TECHNICIAN', 'ROLE_DISPATCHER')")
     @Operation(summary = "Filtrer les incidents")
     public ResponseEntity<List<IncidentResponseDTO>> filtrerIncidents(
             @RequestParam(required = false) StatutIncident statut,
@@ -66,7 +66,7 @@ public class IncidentController {
     }
 
     @PutMapping("/{id}/cloturer")
-    @PreAuthorize("hasRole('SUPERVISEUR_INCIDENTS')")
+    @PreAuthorize("hasRole('ROLE_DISPATCHER')")
     @Operation(summary = "Clôturer un incident")
     public ResponseEntity<Void> cloturerIncident(
             @PathVariable Long id,
@@ -77,7 +77,7 @@ public class IncidentController {
     }
 
     @PutMapping("/{id}/escalader")
-    @PreAuthorize("hasRole('SUPERVISEUR_INCIDENTS')")
+    @PreAuthorize("hasRole('ROLE_DISPATCHER')")
     @Operation(summary = "Escalader un incident critique")
     public ResponseEntity<Void> escaladerIncident(
             @PathVariable Long id,
@@ -88,7 +88,7 @@ public class IncidentController {
     }
 
     @PutMapping("/{id}/affecter")
-    @PreAuthorize("hasRole('SUPERVISEUR_INCIDENTS')")
+    @PreAuthorize("hasRole('ROLE_DISPATCHER')")
     @Operation(summary = "Affecter un responsable")
     public ResponseEntity<Void> affecterResponsable(
             @PathVariable Long id,
@@ -98,8 +98,19 @@ public class IncidentController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/{id}/renforts/{agentId}")
+    @PreAuthorize("hasRole('ROLE_DISPATCHER')")
+    @Operation(summary = "Affecter un renfort (agent supplémentaire) à un incident en cours")
+    public ResponseEntity<Void> ajouterRenfort(
+            @PathVariable Long id,
+            @PathVariable Long agentId,
+            @RequestHeader("X-User-Id") Long userId) {
+        incidentService.ajouterRenfort(id, agentId, userId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PutMapping("/{id}/statut")
-    @PreAuthorize("hasAnyRole('AGENT_INCIDENTS', 'SUPERVISEUR_INCIDENTS')")
+    @PreAuthorize("hasAnyRole('ROLE_TECHNICIAN', 'ROLE_DISPATCHER')")
     @Operation(summary = "Mettre à jour le statut")
     public ResponseEntity<Void> mettreAJourStatut(
             @PathVariable Long id,
@@ -110,7 +121,7 @@ public class IncidentController {
     }
 
     @PutMapping("/{id}/annuler")
-    @PreAuthorize("hasRole('SUPERVISEUR_INCIDENTS')")
+    @PreAuthorize("hasRole('ROLE_DISPATCHER')")
     @Operation(summary = "Annuler un incident (fausse alerte)")
     public ResponseEntity<Void> annulerIncident(
             @PathVariable Long id,

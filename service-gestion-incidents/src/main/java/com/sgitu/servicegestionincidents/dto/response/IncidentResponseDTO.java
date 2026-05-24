@@ -29,4 +29,7 @@ public class IncidentResponseDTO {
     private Double longitude;
     private String incidentParentRef;
     private LocalDateTime dateResolution;
+    private String motifAnnulation;
+    private String motifCloture;
+    private java.util.List<RenfortDTO> renforts;
 }
