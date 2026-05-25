@@ -2,8 +2,10 @@ package com.g7suivivehicules.controller;
 
 import com.g7suivivehicules.dto.VehiculeRequest;
 import com.g7suivivehicules.dto.VehiculeResponse;
+import com.g7suivivehicules.dto.VehicleSnapshotDTO;
 import com.g7suivivehicules.entity.Vehicule;
 import com.g7suivivehicules.service.VehiculeService;
+import com.g7suivivehicules.service.SnapshotService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -19,12 +21,13 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/suivi-vehicules/vehicules")
+@RequestMapping({"/api/suivi-vehicules/vehicules", "/api/suivi-vehicules/vehicles"})
 @RequiredArgsConstructor
 @Tag(name = "Gestion des Véhicules", description = "CRUD de la flotte de véhicules (bus, trams, taxis). Gestion des statuts et affectation aux lignes G4.")
 public class VehiculeController {
 
     private final VehiculeService vehiculeService;
+    private final SnapshotService snapshotService;
 
     @PostMapping
     @Operation(summary = "Créer un nouveau véhicule", description = "Enregistre un nouveau véhicule dans la flotte. L'immatriculation doit être unique.")
@@ -131,5 +134,26 @@ public class VehiculeController {
             @Parameter(description = "Type de véhicule", example = "BUS")
             @PathVariable Vehicule.TypeVehicule type) {
         return ResponseEntity.ok(vehiculeService.getVehiculesByType(type));
+    }
+
+    @GetMapping("/{id}/snapshot")
+    @Operation(summary = "Snapshot d'un véhicule", description = "Retourne la dernière position, vitesse, statut, timestamp et les alertes actives pour un véhicule donné.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Snapshot du véhicule retourné"),
+            @ApiResponse(responseCode = "404", description = "Véhicule introuvable")
+    })
+    public ResponseEntity<VehicleSnapshotDTO> obtenirVehicleSnapshot(
+            @Parameter(description = "UUID du véhicule", example = "53c31262-591a-44d4-8872-51e84611ac5e")
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(snapshotService.getVehicleSnapshot(id));
+    }
+
+    @GetMapping("/snapshot")
+    @Operation(summary = "Snapshot de toute la flotte", description = "Retourne les snapshots pour tous les véhicules de la flotte actuelle (dernière position, vitesse, statut, alertes actives).")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Snapshot de la flotte retourné")
+    })
+    public ResponseEntity<List<VehicleSnapshotDTO>> obtenirFlotteSnapshot() {
+        return ResponseEntity.ok(snapshotService.getFleetSnapshot());
     }
 }
