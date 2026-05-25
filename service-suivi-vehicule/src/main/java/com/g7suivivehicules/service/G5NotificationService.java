@@ -96,4 +96,47 @@ public class G5NotificationService {
                 return "Alerte de sécurité détectée sur votre véhicule";
         }
     }
+
+    public void notifierLogAdmin(String logLevel, String message) {
+        try {
+            Map<String, String> metadata = new HashMap<>();
+            metadata.put("logLevel", logLevel);
+            metadata.put("serviceName", "G7_SUIVI_VEHICULES");
+            metadata.put("message", message);
+            metadata.put("timestamp", java.time.LocalDateTime.now().toString());
+            metadata.put("source", "G7");
+
+            G5NotificationRequest request = G5NotificationRequest.builder()
+                    .notificationId(UUID.randomUUID().toString())
+                    .eventType("LOG_ALERT_ADMIN")
+                    .channel("EMAIL")
+                    .priority(determinePriorityFromLogLevel(logLevel))
+                    .recipient(G5NotificationRequest.Recipient.builder()
+                            .userId("admin")
+                            .deviceToken(null)
+                            .build())
+                    .metadata(metadata)
+                    .build();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            HttpEntity<G5NotificationRequest> entity = new HttpEntity<>(request, headers);
+
+            restTemplate.postForEntity(g5Url, entity, String.class);
+
+            log.info("[G5Notification] Notification LOG envoyée à l'admin - Level: {}, Message: {}", logLevel, message);
+
+        } catch (Exception e) {
+            log.error("[G5Notification] Échec de l'envoi de log vers G5 : {}", e.getMessage());
+        }
+    }
+
+    private String determinePriorityFromLogLevel(String logLevel) {
+        return switch (logLevel.toUpperCase()) {
+            case "ERROR", "FATAL" -> "HIGH";
+            case "WARN" -> "NORMAL";
+            default -> "LOW";
+        };
+    }
 }
