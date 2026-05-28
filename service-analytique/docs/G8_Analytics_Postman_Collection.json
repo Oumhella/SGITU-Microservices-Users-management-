@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "g8-analytics-collection",
     "name": "G8 Analytics Service",
-    "description": "Full test suite for the G8 Analytics Service. Run requests in order:\n1. Ingest data (01-06)\n2. Wait ~60 seconds for the scheduler\n3. Read analytics (07-13)\n4. Generate and fetch a report (14-15)",
+    "description": "Full test suite for the G8 Analytics Service.\n\nIMPORTANT:\n- Every ingestion event must include \"schemaVersion\": 1\n- Incidents require \"latitude\" and \"longitude\" (zones become e.g. \"33.57,-7.59\")\n- Timestamps use {{today}} — keep collection variables in sync (run any request once)\n\nRun in order:\n1. Ingest data (01-06)\n2. Wait ~60 seconds for the scheduler\n3. Read analytics (07-13) + monitoring (16-17)\n4. Generate and fetch a report (14-15)\n5. Grafana: http://localhost:3000 (admin / sgitu2026)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "event": [
@@ -10,9 +10,16 @@
       "listen": "prerequest",
       "script": {
         "exec": [
-          "// Auto-set today's date (YYYY-MM-DD) for report period",
           "var today = new Date().toISOString().split('T')[0];",
-          "pm.collectionVariables.set('today', today);"
+          "pm.collectionVariables.set('today', today);",
+          "pm.collectionVariables.set('ts08', today + 'T08:00:00Z');",
+          "pm.collectionVariables.set('ts09', today + 'T09:00:00Z');",
+          "pm.collectionVariables.set('ts10', today + 'T10:00:00Z');",
+          "pm.collectionVariables.set('ts11', today + 'T11:00:00Z');",
+          "pm.collectionVariables.set('ts14', today + 'T14:00:00Z');",
+          "pm.collectionVariables.set('ts15', today + 'T15:30:00Z');",
+          "pm.collectionVariables.set('ts17', today + 'T17:00:00Z');",
+          "pm.collectionVariables.set('ts18', today + 'T18:00:00Z');"
         ],
         "type": "text/javascript"
       }
@@ -58,7 +65,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "[\n  {\n    \"userId\": \"USR-001\",\n    \"status\": \"validated\",\n    \"line\": \"L1\",\n    \"stationId\": \"ST-05\",\n    \"timestamp\": \"2026-05-04T08:30:00Z\",\n    \"ticketId\": \"TCK-001\",\n    \"scanType\": \"NFC\"\n  },\n  {\n    \"userId\": \"USR-002\",\n    \"status\": \"validated\",\n    \"line\": \"L1\",\n    \"stationId\": \"ST-05\",\n    \"timestamp\": \"2026-05-04T08:45:00Z\",\n    \"ticketId\": \"TCK-002\",\n    \"scanType\": \"QR\"\n  },\n  {\n    \"userId\": \"USR-003\",\n    \"status\": \"expired\",\n    \"line\": \"L2\",\n    \"stationId\": \"ST-10\",\n    \"timestamp\": \"2026-05-04T09:00:00Z\",\n    \"ticketId\": \"TCK-003\"\n  },\n  {\n    \"userId\": \"USR-004\",\n    \"status\": \"validated\",\n    \"line\": \"L2\",\n    \"stationId\": \"ST-10\",\n    \"timestamp\": \"2026-05-04T17:10:00Z\",\n    \"ticketId\": \"TCK-004\",\n    \"scanType\": \"NFC\"\n  },\n  {\n    \"userId\": \"USR-005\",\n    \"status\": \"validated\",\n    \"line\": \"L3\",\n    \"stationId\": \"ST-15\",\n    \"timestamp\": \"2026-05-04T17:30:00Z\",\n    \"ticketId\": \"TCK-005\",\n    \"scanType\": \"NFC\"\n  },\n  {\n    \"userId\": \"USR-006\",\n    \"status\": \"validated\",\n    \"line\": \"L1\",\n    \"stationId\": \"ST-05\",\n    \"timestamp\": \"2026-05-04T17:50:00Z\",\n    \"ticketId\": \"TCK-006\",\n    \"scanType\": \"QR\"\n  },\n  {\n    \"userId\": \"USR-007\",\n    \"status\": \"validated\",\n    \"line\": \"L3\",\n    \"stationId\": \"ST-20\",\n    \"timestamp\": \"2026-05-04T18:05:00Z\",\n    \"ticketId\": \"TCK-007\",\n    \"scanType\": \"NFC\"\n  }\n]",
+              "raw": "[\n  {\n    \"schemaVersion\": 1,\n    \"userId\": \"USR-001\",\n    \"status\": \"validated\",\n    \"line\": \"L1\",\n    \"stationId\": \"ST-05\",\n    \"timestamp\": \"{{ts08}}\",\n    \"ticketId\": \"TCK-001\",\n    \"scanType\": \"NFC\"\n  },\n  {\n    \"schemaVersion\": 1,\n    \"userId\": \"USR-002\",\n    \"status\": \"validated\",\n    \"line\": \"L1\",\n    \"stationId\": \"ST-05\",\n    \"timestamp\": \"{{ts09}}\",\n    \"ticketId\": \"TCK-002\",\n    \"scanType\": \"QR\"\n  },\n  {\n    \"schemaVersion\": 1,\n    \"userId\": \"USR-003\",\n    \"status\": \"expired\",\n    \"line\": \"L2\",\n    \"stationId\": \"ST-10\",\n    \"timestamp\": \"{{ts09}}\",\n    \"ticketId\": \"TCK-003\"\n  },\n  {\n    \"schemaVersion\": 1,\n    \"userId\": \"USR-004\",\n    \"status\": \"validated\",\n    \"line\": \"L2\",\n    \"stationId\": \"ST-10\",\n    \"timestamp\": \"{{ts17}}\",\n    \"ticketId\": \"TCK-004\",\n    \"scanType\": \"NFC\"\n  },\n  {\n    \"schemaVersion\": 1,\n    \"userId\": \"USR-005\",\n    \"status\": \"validated\",\n    \"line\": \"L3\",\n    \"stationId\": \"ST-15\",\n    \"timestamp\": \"{{ts17}}\",\n    \"ticketId\": \"TCK-005\",\n    \"scanType\": \"NFC\"\n  },\n  {\n    \"schemaVersion\": 1,\n    \"userId\": \"USR-006\",\n    \"status\": \"validated\",\n    \"line\": \"L1\",\n    \"stationId\": \"ST-05\",\n    \"timestamp\": \"{{ts18}}\",\n    \"ticketId\": \"TCK-006\",\n    \"scanType\": \"QR\"\n  },\n  {\n    \"schemaVersion\": 1,\n    \"userId\": \"USR-007\",\n    \"status\": \"validated\",\n    \"line\": \"L3\",\n    \"stationId\": \"ST-20\",\n    \"timestamp\": \"{{ts18}}\",\n    \"ticketId\": \"TCK-007\",\n    \"scanType\": \"NFC\"\n  }\n]",
               "options": {
                 "raw": {
                   "language": "json"
@@ -85,14 +92,14 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "[\n  {\n    \"incidentId\": \"INC-001\",\n    \"type\": \"accident\",\n    \"line\": \"L2\",\n    \"zone\": \"Z_NORTH\",\n    \"timestamp\": \"2026-05-04T10:00:00Z\",\n    \"severity\": \"HIGH\",\n    \"description\": \"Vehicle collision near main station\"\n  },\n  {\n    \"incidentId\": \"INC-002\",\n    \"type\": \"breakdown\",\n    \"line\": \"L1\",\n    \"zone\": \"Z_CENTER\",\n    \"timestamp\": \"2026-05-04T11:00:00Z\",\n    \"severity\": \"CRITICAL\",\n    \"description\": \"Engine failure on bus 404\",\n    \"resolutionMinutes\": 30\n  },\n  {\n    \"incidentId\": \"INC-003\",\n    \"type\": \"delay\",\n    \"line\": \"L3\",\n    \"zone\": \"Z_SOUTH\",\n    \"timestamp\": \"2026-05-04T14:00:00Z\",\n    \"severity\": \"MEDIUM\",\n    \"resolutionMinutes\": 15\n  },\n  {\n    \"incidentId\": \"INC-004\",\n    \"type\": \"accident\",\n    \"line\": \"L2\",\n    \"zone\": \"Z_NORTH\",\n    \"timestamp\": \"2026-05-04T15:30:00Z\",\n    \"severity\": \"MEDIUM\",\n    \"description\": \"Minor collision, road cleared\",\n    \"resolutionMinutes\": 20\n  }\n]",
+              "raw": "[\n  {\n    \"schemaVersion\": 1,\n    \"incidentId\": \"INC-001\",\n    \"type\": \"accident\",\n    \"line\": \"L2\",\n    \"latitude\": 33.5731,\n    \"longitude\": -7.5898,\n    \"timestamp\": \"{{ts10}}\",\n    \"severity\": \"HIGH\",\n    \"description\": \"Vehicle collision near main station\"\n  },\n  {\n    \"schemaVersion\": 1,\n    \"incidentId\": \"INC-002\",\n    \"type\": \"breakdown\",\n    \"line\": \"L1\",\n    \"latitude\": 33.5800,\n    \"longitude\": -7.6000,\n    \"timestamp\": \"{{ts11}}\",\n    \"severity\": \"CRITICAL\",\n    \"description\": \"Engine failure on bus 404\",\n    \"resolutionMinutes\": 30\n  },\n  {\n    \"schemaVersion\": 1,\n    \"incidentId\": \"INC-003\",\n    \"type\": \"delay\",\n    \"line\": \"L3\",\n    \"latitude\": 33.5900,\n    \"longitude\": -7.6100,\n    \"timestamp\": \"{{ts14}}\",\n    \"severity\": \"MEDIUM\",\n    \"resolutionMinutes\": 15\n  },\n  {\n    \"schemaVersion\": 1,\n    \"incidentId\": \"INC-004\",\n    \"type\": \"accident\",\n    \"line\": \"L2\",\n    \"latitude\": 33.5731,\n    \"longitude\": -7.5898,\n    \"timestamp\": \"{{ts15}}\",\n    \"severity\": \"MEDIUM\",\n    \"description\": \"Minor collision, road cleared\",\n    \"resolutionMinutes\": 20\n  }\n]",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "description": "Simulates incident reports from different zones and severities. Z_NORTH will appear as a repeat-incident zone, triggering INC_05.\n\nExpected response: 201 Created with status=SUCCESS"
+            "description": "GPS-based zones (rounded to 2 decimals). INC-001 and INC-004 share coordinates → repeat zone \"33.57,-7.59\" (INC_05).\n\nExpected response: 201 Created with status=SUCCESS"
           }
         },
         {
@@ -112,7 +119,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "[\n  {\n    \"transactionId\": \"TXN-001\",\n    \"status\": \"completed\",\n    \"line\": \"L1\",\n    \"timestamp\": \"2026-05-04T08:30:00Z\",\n    \"amount\": 25.50,\n    \"method\": \"CARD\"\n  },\n  {\n    \"transactionId\": \"TXN-002\",\n    \"status\": \"completed\",\n    \"zone\": \"Z_CENTER\",\n    \"timestamp\": \"2026-05-04T09:00:00Z\",\n    \"amount\": 10.00,\n    \"method\": \"CASH\"\n  },\n  {\n    \"transactionId\": \"TXN-003\",\n    \"status\": \"completed\",\n    \"line\": \"L2\",\n    \"timestamp\": \"2026-05-04T10:15:00Z\",\n    \"amount\": 50.00,\n    \"method\": \"CARD\"\n  },\n  {\n    \"transactionId\": \"TXN-004\",\n    \"status\": \"completed\",\n    \"line\": \"L3\",\n    \"timestamp\": \"2026-05-04T12:00:00Z\",\n    \"amount\": 15.75,\n    \"method\": \"CASH\"\n  },\n  {\n    \"transactionId\": \"TXN-005\",\n    \"status\": \"failed\",\n    \"line\": \"L1\",\n    \"timestamp\": \"2026-05-04T13:00:00Z\",\n    \"amount\": 25.50,\n    \"method\": \"CARD\"\n  }\n]",
+              "raw": "[\n  {\n    \"schemaVersion\": 1,\n    \"transactionId\": \"TXN-001\",\n    \"status\": \"completed\",\n    \"line\": \"L1\",\n    \"timestamp\": \"{{ts08}}\",\n    \"amount\": 25.50,\n    \"method\": \"CARD\"\n  },\n  {\n    \"schemaVersion\": 1,\n    \"transactionId\": \"TXN-002\",\n    \"status\": \"completed\",\n    \"timestamp\": \"{{ts09}}\",\n    \"amount\": 10.00,\n    \"method\": \"CASH\"\n  },\n  {\n    \"schemaVersion\": 1,\n    \"transactionId\": \"TXN-003\",\n    \"status\": \"completed\",\n    \"line\": \"L2\",\n    \"timestamp\": \"{{ts10}}\",\n    \"amount\": 50.00,\n    \"method\": \"CARD\"\n  },\n  {\n    \"schemaVersion\": 1,\n    \"transactionId\": \"TXN-004\",\n    \"status\": \"completed\",\n    \"line\": \"L3\",\n    \"timestamp\": \"{{ts11}}\",\n    \"amount\": 15.75,\n    \"method\": \"CASH\"\n  },\n  {\n    \"schemaVersion\": 1,\n    \"transactionId\": \"TXN-005\",\n    \"status\": \"failed\",\n    \"line\": \"L1\",\n    \"timestamp\": \"{{ts14}}\",\n    \"amount\": 25.50,\n    \"method\": \"CARD\"\n  }\n]",
               "options": {
                 "raw": {
                   "language": "json"
@@ -139,7 +146,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "[\n  {\n    \"userId\": \"USR-101\",\n    \"action\": \"created\",\n    \"planType\": \"MONTHLY_STUDENT\",\n    \"timestamp\": \"2026-05-04T09:00:00Z\"\n  },\n  {\n    \"userId\": \"USR-102\",\n    \"action\": \"renewed\",\n    \"planType\": \"YEARLY_STANDARD\",\n    \"timestamp\": \"2026-05-04T09:15:00Z\"\n  },\n  {\n    \"userId\": \"USR-103\",\n    \"action\": \"renewed\",\n    \"planType\": \"MONTHLY_STANDARD\",\n    \"timestamp\": \"2026-05-04T10:00:00Z\"\n  },\n  {\n    \"userId\": \"USR-104\",\n    \"action\": \"cancelled\",\n    \"planType\": \"MONTHLY_STANDARD\",\n    \"reason\": \"PAYMENT_FAILED\",\n    \"timestamp\": \"2026-05-04T11:00:00Z\"\n  },\n  {\n    \"userId\": \"USR-105\",\n    \"action\": \"created\",\n    \"planType\": \"YEARLY_STANDARD\",\n    \"timestamp\": \"2026-05-04T14:00:00Z\"\n  }\n]",
+              "raw": "[\n  {\n    \"schemaVersion\": 1,\n    \"userId\": \"USR-101\",\n    \"action\": \"created\",\n    \"planType\": \"MONTHLY_STUDENT\",\n    \"timestamp\": \"{{ts09}}\"\n  },\n  {\n    \"schemaVersion\": 1,\n    \"userId\": \"USR-102\",\n    \"action\": \"renewed\",\n    \"planType\": \"YEARLY_STANDARD\",\n    \"timestamp\": \"{{ts09}}\"\n  },\n  {\n    \"schemaVersion\": 1,\n    \"userId\": \"USR-103\",\n    \"action\": \"renewed\",\n    \"planType\": \"MONTHLY_STANDARD\",\n    \"timestamp\": \"{{ts10}}\"\n  },\n  {\n    \"schemaVersion\": 1,\n    \"userId\": \"USR-104\",\n    \"action\": \"cancelled\",\n    \"planType\": \"MONTHLY_STANDARD\",\n    \"reason\": \"PAYMENT_FAILED\",\n    \"timestamp\": \"{{ts11}}\"\n  },\n  {\n    \"schemaVersion\": 1,\n    \"userId\": \"USR-105\",\n    \"action\": \"created\",\n    \"planType\": \"YEARLY_STANDARD\",\n    \"timestamp\": \"{{ts14}}\"\n  }\n]",
               "options": {
                 "raw": {
                   "language": "json"
@@ -166,7 +173,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "[\n  {\n    \"vehicleId\": \"BUS_101\",\n    \"status\": \"in_service\",\n    \"line\": \"L1\",\n    \"zone\": \"Z_CENTER\",\n    \"timestamp\": \"2026-05-04T08:00:00Z\",\n    \"speed\": 42.5,\n    \"occupancy\": 80,\n    \"delayMinutes\": 0\n  },\n  {\n    \"vehicleId\": \"BUS_202\",\n    \"status\": \"in_service\",\n    \"line\": \"L2\",\n    \"zone\": \"Z_NORTH\",\n    \"timestamp\": \"2026-05-04T08:05:00Z\",\n    \"speed\": 35.0,\n    \"occupancy\": 120,\n    \"delayMinutes\": 8\n  },\n  {\n    \"vehicleId\": \"TRAM_01\",\n    \"status\": \"out_of_service\",\n    \"line\": \"T1\",\n    \"zone\": \"Z_EAST\",\n    \"timestamp\": \"2026-05-04T09:00:00Z\",\n    \"speed\": 0.0,\n    \"alertCode\": \"ENG_TEMP_HIGH\"\n  },\n  {\n    \"vehicleId\": \"BUS_303\",\n    \"status\": \"in_service\",\n    \"line\": \"L3\",\n    \"zone\": \"Z_SOUTH\",\n    \"timestamp\": \"2026-05-04T10:00:00Z\",\n    \"speed\": 50.0,\n    \"occupancy\": 45,\n    \"delayMinutes\": 2\n  },\n  {\n    \"vehicleId\": \"BUS_404\",\n    \"status\": \"in_service\",\n    \"line\": \"L1\",\n    \"zone\": \"Z_WEST\",\n    \"timestamp\": \"2026-05-04T11:00:00Z\",\n    \"speed\": 38.0,\n    \"occupancy\": 95,\n    \"delayMinutes\": 5\n  }\n]",
+              "raw": "[\n  {\n    \"schemaVersion\": 1,\n    \"vehicleId\": \"BUS_101\",\n    \"status\": \"in_service\",\n    \"line\": \"L1\",\n    \"timestamp\": \"{{ts08}}\",\n    \"speed\": 42.5,\n    \"occupancy\": 80,\n    \"delayMinutes\": 0\n  },\n  {\n    \"schemaVersion\": 1,\n    \"vehicleId\": \"BUS_202\",\n    \"status\": \"in_service\",\n    \"line\": \"L2\",\n    \"timestamp\": \"{{ts08}}\",\n    \"speed\": 35.0,\n    \"occupancy\": 120,\n    \"delayMinutes\": 8\n  },\n  {\n    \"schemaVersion\": 1,\n    \"vehicleId\": \"TRAM_01\",\n    \"status\": \"out_of_service\",\n    \"line\": \"T1\",\n    \"timestamp\": \"{{ts09}}\",\n    \"speed\": 0.0,\n    \"alertCode\": \"ENG_TEMP_HIGH\"\n  },\n  {\n    \"schemaVersion\": 1,\n    \"vehicleId\": \"BUS_303\",\n    \"status\": \"in_service\",\n    \"line\": \"L3\",\n    \"timestamp\": \"{{ts10}}\",\n    \"speed\": 50.0,\n    \"occupancy\": 45,\n    \"delayMinutes\": 2\n  },\n  {\n    \"schemaVersion\": 1,\n    \"vehicleId\": \"BUS_404\",\n    \"status\": \"in_service\",\n    \"line\": \"L1\",\n    \"timestamp\": \"{{ts11}}\",\n    \"speed\": 38.0,\n    \"occupancy\": 95,\n    \"delayMinutes\": 5\n  }\n]",
               "options": {
                 "raw": {
                   "language": "json"
@@ -193,7 +200,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "[\n  {\n    \"userId\": \"USR-201\",\n    \"action\": \"active\",\n    \"timestamp\": \"2026-05-04T08:00:00Z\",\n    \"deviceOS\": \"iOS\"\n  },\n  {\n    \"userId\": \"USR-202\",\n    \"action\": \"active\",\n    \"timestamp\": \"2026-05-04T08:10:00Z\",\n    \"deviceOS\": \"Android\"\n  },\n  {\n    \"userId\": \"USR-203\",\n    \"action\": \"active\",\n    \"timestamp\": \"2026-05-04T09:00:00Z\",\n    \"deviceOS\": \"iOS\"\n  },\n  {\n    \"userId\": \"USR-204\",\n    \"action\": \"inactive\",\n    \"timestamp\": \"2026-05-04T10:00:00Z\"\n  },\n  {\n    \"userId\": \"USR-205\",\n    \"action\": \"active\",\n    \"timestamp\": \"2026-05-04T17:00:00Z\",\n    \"deviceOS\": \"Android\"\n  }\n]",
+              "raw": "[\n  {\n    \"schemaVersion\": 1,\n    \"userId\": \"USR-201\",\n    \"action\": \"active\",\n    \"timestamp\": \"{{ts08}}\",\n    \"deviceOS\": \"iOS\"\n  },\n  {\n    \"schemaVersion\": 1,\n    \"userId\": \"USR-202\",\n    \"action\": \"active\",\n    \"timestamp\": \"{{ts08}}\",\n    \"deviceOS\": \"Android\"\n  },\n  {\n    \"schemaVersion\": 1,\n    \"userId\": \"USR-203\",\n    \"action\": \"active\",\n    \"timestamp\": \"{{ts09}}\",\n    \"deviceOS\": \"iOS\"\n  },\n  {\n    \"schemaVersion\": 1,\n    \"userId\": \"USR-204\",\n    \"action\": \"inactive\",\n    \"timestamp\": \"{{ts10}}\"\n  },\n  {\n    \"schemaVersion\": 1,\n    \"userId\": \"USR-205\",\n    \"action\": \"active\",\n    \"timestamp\": \"{{ts17}}\",\n    \"deviceOS\": \"Android\"\n  }\n]",
               "options": {
                 "raw": {
                   "language": "json"
@@ -209,16 +216,16 @@
       "name": "--- WAIT ~60 SECONDS FOR SCHEDULER ---",
       "item": [
         {
-          "name": "07 - Health Check (Ping)",
+          "name": "07 - Actuator Health",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/analytics/dashboard",
+              "raw": "{{baseUrl}}/actuator/health",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "analytics", "dashboard"]
+              "path": ["actuator", "health"]
             },
-            "description": "Send this immediately after ingesting to confirm the service is alive. The values will still be zero until the scheduler runs (every 60 seconds). After ~60 seconds, re-send this request and the values should reflect your ingested data."
+            "description": "Spring Boot health (used by Docker). Expect status UP when MongoDB is reachable."
           }
         }
       ]
@@ -426,7 +433,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "[\n  {\n    \"userId\": \"USR-GOOD\",\n    \"status\": \"validated\",\n    \"line\": \"L1\",\n    \"stationId\": \"ST-05\",\n    \"timestamp\": \"2026-05-04T08:30:00Z\",\n    \"ticketId\": \"TCK-GOOD\"\n  },\n  {\n    \"userId\": \"USR-BAD\",\n    \"status\": \"validated\",\n    \"line\": \"L1\",\n    \"ticketId\": \"TCK-BAD\"\n  }\n]",
+              "raw": "[\n  {\n    \"schemaVersion\": 1,\n    \"userId\": \"USR-GOOD\",\n    \"status\": \"validated\",\n    \"line\": \"L1\",\n    \"stationId\": \"ST-05\",\n    \"timestamp\": \"{{ts08}}\",\n    \"ticketId\": \"TCK-GOOD\"\n  },\n  {\n    \"schemaVersion\": 1,\n    \"userId\": \"USR-BAD\",\n    \"status\": \"validated\",\n    \"line\": \"L1\",\n    \"ticketId\": \"TCK-BAD\"\n  }\n]",
               "options": {
                 "raw": {
                   "language": "json"

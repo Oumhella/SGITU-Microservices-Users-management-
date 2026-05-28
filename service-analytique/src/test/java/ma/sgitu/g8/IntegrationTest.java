@@ -111,7 +111,13 @@ class IntegrationTest {
 
         // 5 incident events
         List<Map<String, Object>> incidents = new ArrayList<>();
-        String[] zones = {"Z1", "Z2", "Z3", "Z1", "Z2"};
+        double[][] coordinates = {
+                {33.5731, -7.5898},
+                {33.5800, -7.6000},
+                {33.5900, -7.6100},
+                {33.5731, -7.5898},
+                {33.5800, -7.6000}
+        };
         String[] severities = {"LOW", "MEDIUM", "HIGH", "CRITICAL", "LOW"};
         for (int i = 0; i < 5; i++) {
             incidents.add(Map.of(
@@ -119,7 +125,8 @@ class IntegrationTest {
                     "timestamp", createTimestamp(10),
                     "incidentId", UUID.randomUUID().toString(),
                     "type", "delay",
-                    "zone", zones[i],
+                    "latitude", coordinates[i][0],
+                    "longitude", coordinates[i][1],
                     "severity", severities[i]
             ));
         }

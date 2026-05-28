@@ -96,14 +96,15 @@ class IngestionControllerTest {
         );
     }
 
-    private Map<String, Object> incidentEvent(String zone) {
+    private Map<String, Object> incidentEvent(double latitude, double longitude) {
         return Map.of(
                 "schemaVersion", 1,
                 "timestamp", validTs(),
-                "incidentId", "inc-" + zone,
+                "incidentId", "inc-" + latitude + "-" + longitude,
                 "type", "delay",
                 "severity", "LOW",
-                "zone", zone
+                "latitude", latitude,
+                "longitude", longitude
         );
     }
 
@@ -308,7 +309,7 @@ class IngestionControllerTest {
         @Test
         @DisplayName("A – single valid incident event → 201 SUCCESS")
         void singleValidIncident() throws Exception {
-            String body = objectMapper.writeValueAsString(List.of(incidentEvent("Z1")));
+            String body = objectMapper.writeValueAsString(List.of(incidentEvent(33.5731, -7.5898)));
             mockMvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON).content(body))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.status").value("SUCCESS"));
@@ -318,7 +319,10 @@ class IngestionControllerTest {
         @DisplayName("B – three valid incident events → 201 SUCCESS, all accepted")
         void multiValidIncidents() throws Exception {
             String body = objectMapper.writeValueAsString(
-                    List.of(incidentEvent("Z1"), incidentEvent("Z2"), incidentEvent("Z3")));
+                    List.of(
+                            incidentEvent(33.5731, -7.5898),
+                            incidentEvent(33.5800, -7.6000),
+                            incidentEvent(33.5900, -7.6100)));
             mockMvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON).content(body))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.totalAccepted").value(3));
@@ -328,7 +332,7 @@ class IngestionControllerTest {
         @DisplayName("C – partial batch (2 valid + 1 invalid) → 207 PARTIAL")
         void partialIncidentBatch() throws Exception {
             String body = objectMapper.writeValueAsString(
-                    List.of(incidentEvent("Z1"), invalidEvent(), incidentEvent("Z2")));
+                    List.of(incidentEvent(33.5731, -7.5898), invalidEvent(), incidentEvent(33.5800, -7.6000)));
             mockMvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON).content(body))
                     .andExpect(status().isMultiStatus())
                     .andExpect(jsonPath("$.status").value("PARTIAL"));

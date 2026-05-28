@@ -110,10 +110,10 @@ class ScheduledAnalyticsJobTest {
                 .sourceType(SourceType.INCIDENT)
                 .sourceId("inc-001")
                 .eventType("INCIDENT_DELAY")
-                .zoneId("Z1")
+                .zoneId("33.57,-7.59")
                 .timestamp(baseTime)
                 .receivedAt(LocalDateTime.now())
-                .payload(Map.of("type", "delay", "severity", "LOW", "zone", "Z1"))
+                .payload(Map.of("type", "delay", "severity", "LOW", "latitude", 33.5731, "longitude", -7.5898))
                 .processed(false)
                 .build());
 

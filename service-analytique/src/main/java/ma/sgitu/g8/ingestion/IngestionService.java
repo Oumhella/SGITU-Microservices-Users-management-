@@ -1,6 +1,7 @@
 package ma.sgitu.g8.ingestion;
 
 import ma.sgitu.g8.ingestion.dto.BatchIngestionResponse;
+import ma.sgitu.g8.geo.ZoneResolver;
 import ma.sgitu.g8.model.IncomingEvent;
 import ma.sgitu.g8.model.SourceType;
 import ma.sgitu.g8.repository.EventRepository;
@@ -128,7 +129,7 @@ public class IngestionService {
             case TICKETING -> firstMissing(raw, "timestamp", "userId", "status");
             case PAYMENT -> firstMissing(raw, "timestamp", "transactionId", "amount", "status");
             case VEHICLE -> firstMissing(raw, "timestamp", "vehicleId", "status", "line");
-            case INCIDENT -> firstMissing(raw, "timestamp", "incidentId", "type", "severity", "zone");
+            case INCIDENT -> firstMissing(raw, "timestamp", "incidentId", "type", "severity", "latitude", "longitude");
             case SUBSCRIPTION -> firstMissing(raw, "timestamp", "userId", "action");
             case USER -> firstMissing(raw, "timestamp", "userId", "action");
         };
@@ -164,18 +165,43 @@ public class IngestionService {
 
     private String validateNumericFields(Map<String, Object> raw) {
         for (String field : List.of("amount", "speed", "delayMinutes", "resolutionMinutes")) {
-            Object value = raw.get(field);
-            if (value == null || String.valueOf(value).isBlank()) {
-                continue;
+            String error = validateNonNegativeField(raw, field);
+            if (error != null) {
+                return error;
             }
+        }
+        return validateCoordinateFields(raw);
+    }
 
-            Double numericValue = readNumber(value);
-            if (numericValue == null) {
-                return "Field " + field + " must be numeric";
-            }
-            if (numericValue < 0) {
-                return "Field " + field + " must be >= 0, got " + value;
-            }
+    private String validateNonNegativeField(Map<String, Object> raw, String field) {
+        Object value = raw.get(field);
+        if (value == null || String.valueOf(value).isBlank()) {
+            return null;
+        }
+        Double numericValue = readNumber(value);
+        if (numericValue == null) {
+            return "Field " + field + " must be numeric";
+        }
+        if (numericValue < 0) {
+            return "Field " + field + " must be >= 0, got " + value;
+        }
+        return null;
+    }
+
+    private String validateCoordinateFields(Map<String, Object> raw) {
+        Double latitude = readCoordinate(raw, "latitude", "lat");
+        Double longitude = readCoordinate(raw, "longitude", "lon", "lng");
+        if (latitude == null && longitude == null) {
+            return null;
+        }
+        if (latitude == null || longitude == null) {
+            return "Both latitude and longitude are required when providing GPS coordinates.";
+        }
+        if (latitude < -90 || latitude > 90) {
+            return "Field latitude must be between -90 and 90, got " + latitude;
+        }
+        if (longitude < -180 || longitude > 180) {
+            return "Field longitude must be between -180 and 180, got " + longitude;
         }
         return null;
     }
@@ -227,9 +253,35 @@ public class IngestionService {
         event.setSchemaVersion(IncomingEvent.CURRENT_SCHEMA_VERSION);
         event.setReceivedAt(LocalDateTime.now());
         event.setLineId(readString(raw, "line"));
-        event.setZoneId(readString(raw, "zone"));
+        event.setZoneId(resolveIncidentZoneId(raw, sourceType));
         event.setProcessed(false);
         return event;
+    }
+
+    private String resolveIncidentZoneId(Map<String, Object> raw, SourceType sourceType) {
+        if (sourceType != SourceType.INCIDENT) {
+            return readString(raw, "zone");
+        }
+        Double latitude = readCoordinate(raw, "latitude", "lat");
+        Double longitude = readCoordinate(raw, "longitude", "lon", "lng");
+        if (latitude == null || longitude == null) {
+            return ZoneResolver.UNKNOWN_ZONE;
+        }
+        return ZoneResolver.resolve(latitude, longitude);
+    }
+
+    private Double readCoordinate(Map<String, Object> raw, String... keys) {
+        for (String key : keys) {
+            Object value = raw.get(key);
+            if (value == null || String.valueOf(value).isBlank()) {
+                continue;
+            }
+            Double numeric = readNumber(value);
+            if (numeric != null) {
+                return numeric;
+            }
+        }
+        return null;
     }
 
     private String resolveSourceId(Map<String, Object> raw, SourceType sourceType) {

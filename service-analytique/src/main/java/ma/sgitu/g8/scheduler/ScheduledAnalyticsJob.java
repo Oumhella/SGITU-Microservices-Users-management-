@@ -8,6 +8,7 @@ import ma.sgitu.g8.aggregation.TicketAggregation;
 import ma.sgitu.g8.aggregation.UserAggregation;
 import ma.sgitu.g8.aggregation.VehicleAggregation;
 import ma.sgitu.g8.alert.ThresholdAlertService;
+import ma.sgitu.g8.metrics.AnalyticsMetricsService;
 import ma.sgitu.g8.ml.MlPredictionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,6 +43,9 @@ public class ScheduledAnalyticsJob {
     @Autowired
     private MlPredictionService mlPredictionService;
 
+    @Autowired
+    private AnalyticsMetricsService analyticsMetricsService;
+
     @Value("${g8.scheduler.auto-run:true}")
     private boolean autoRunEnabled;
 
@@ -63,6 +67,7 @@ public class ScheduledAnalyticsJob {
         thresholdAlertService.detect();
         mlPredictionService.computePeakHoursPrediction();
         mlPredictionService.computeIncidentPrediction();
+        analyticsMetricsService.refreshMetrics();
         log.info("ScheduledAnalyticsJob finished");
     }
 }
