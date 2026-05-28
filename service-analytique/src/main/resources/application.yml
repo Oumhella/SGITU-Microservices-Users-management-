@@ -14,6 +14,11 @@ spring:
       group-id: g8-analytics-group
       auto-offset-reset: earliest
       enable-auto-commit: false
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    listener:
+      missing-topics-fatal: false
 
 kafka:
   topics:
@@ -23,6 +28,8 @@ kafka:
     vehicle: ${KAFKA_TOPIC_VEHICLE:g6-vehicle-events}
     incident: ${KAFKA_TOPIC_INCIDENT:g7-incident-events}
     user: ${KAFKA_TOPIC_USER:g1-user-events}
+  topic:
+    crossgroup: sgitu.crossgroup.events
 
 logging:
   level:
@@ -35,6 +42,11 @@ g5:
 ml:
   service:
     url: ${ML_SERVICE_URL:http://localhost:5000}
+
+# JWT
+jwt:
+  secret: sgitu_g8_secret_key_2025_very_long_secret_for_analytics
+  expiration: 86400000
 
 resilience4j:
   circuitbreaker:
@@ -58,3 +70,24 @@ management:
   metrics:
     tags:
       application: g8-analytics-service
+
+# SpringDoc OpenAPI Configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+  info:
+    title: Data Analysis API
+    description: API for launching, monitoring and managing data analyses
+    version: 1.0.0
+    contact:
+      name: SGITU Team
+      email: support@sgitu.ma
+  servers:
+    - url: http://localhost:8088
+      description: Development server
+    - url: https://api.sgitu.ma
+      description: Production server

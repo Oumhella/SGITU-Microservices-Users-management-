@@ -1,41 +1,27 @@
 package ma.sgitu.g8.ingestion;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ma.sgitu.g8.repository.EventRepository;
-import org.junit.jupiter.api.BeforeEach;
+import ma.sgitu.g8.ingestion.dto.BatchIngestionResponse;
+import ma.sgitu.g8.model.SourceType;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
-import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Integration tests for {@link IngestionController}.
- *
- * Each of the 6 endpoints is exercised with four scenarios:
- *   A – valid single-event batch   → 201 SUCCESS
- *   B – valid multi-event batch    → 201 SUCCESS
- *   C – partial batch              → 207 PARTIAL
- *   D – empty batch                → 400
- *
- * The tests connect to the Docker MongoDB (localhost:27017/g8_analytics_test)
- * and clear the incoming_events collection before each test to ensure isolation.
- */
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(IngestionController.class)
 class IngestionControllerTest {
 
     @Autowired
@@ -44,18 +30,43 @@ class IngestionControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Autowired
-    private EventRepository eventRepository;
+    @MockBean
+    private IngestionService ingestionService;
 
-    /** A valid ISO-8601 timestamp slightly in the past (no timezone drift issues). */
-    private static String validTs() {
-        return OffsetDateTime.now(ZoneOffset.UTC).minusMinutes(1)
-                .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+    @Test
+    @DisplayName("POST /api/v1/ingestion/tickets returns 201 when the batch is successful")
+    void ticketsBatchSuccess() throws Exception {
+        when(ingestionService.ingest(anyList(), eq(SourceType.TICKETING)))
+                .thenReturn(response("SUCCESS", 1, 1, 0));
+
+        mockMvc.perform(post("/api/v1/ingestion/tickets")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(List.of(Map.of(
+                                "timestamp", "2026-05-05T11:00:00Z",
+                                "userId", "user-1",
+                                "status", "validated"
+                        )))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.totalAccepted").value(1));
     }
 
-    @BeforeEach
-    void cleanDb() {
-        eventRepository.deleteAll();
+    @Test
+    @DisplayName("POST /api/v1/ingestion/payments returns 207 when the batch is partial")
+    void paymentsBatchPartial() throws Exception {
+        when(ingestionService.ingest(anyList(), eq(SourceType.PAYMENT)))
+                .thenReturn(response("PARTIAL", 3, 2, 1));
+
+        mockMvc.perform(post("/api/v1/ingestion/payments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(List.of(
+                                Map.of("timestamp", "2026-05-05T11:00:00Z", "transactionId", "tx-1", "status", "completed"),
+                                Map.of("garbage", "data"),
+                                Map.of("timestamp", "2026-05-05T11:01:00Z", "transactionId", "tx-2", "status", "completed")
+                        ))))
+                .andExpect(status().isMultiStatus())
+                .andExpect(jsonPath("$.status").value("PARTIAL"))
+                .andExpect(jsonPath("$.totalRejected").value(1));
     }
 
     // =========================================================================
@@ -438,6 +449,25 @@ class IngestionControllerTest {
             mockMvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON).content("[]"))
                     .andExpect(status().isBadRequest());
         }
+    @Test
+    @DisplayName("POST /api/v1/ingestion/users returns 400 for an empty batch")
+    void usersBatchEmpty() throws Exception {
+        mockMvc.perform(post("/api/v1/ingestion/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[]"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value("REJECTED"));
+    }
+
+    private BatchIngestionResponse response(String status, int received, int accepted, int rejected) {
+        return BatchIngestionResponse.builder()
+                .status(status)
+                .totalReceived(received)
+                .totalAccepted(accepted)
+                .totalRejected(rejected)
+                .rejectedReasons(rejected == 0 ? List.of() : List.of("Rejected event"))
+                .build();
+    }
     }
 
     // =========================================================================

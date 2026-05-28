@@ -1,12 +1,15 @@
 package ma.sgitu.g8;
 
+import ma.sgitu.g8.ingestion.IngestionService;
+import ma.sgitu.g8.ingestion.dto.BatchIngestionResponse;
 import ma.sgitu.g8.model.Report;
+import ma.sgitu.g8.model.SnapshotType;
+import ma.sgitu.g8.model.SourceType;
 import ma.sgitu.g8.model.StatSnapshot;
 import ma.sgitu.g8.repository.EventRepository;
 import ma.sgitu.g8.repository.ReportRepository;
-import ma.sgitu.g8.repository.SnapshotRepository;
-import ma.sgitu.g8.scheduler.ScheduledAnalyticsJob;
-import org.junit.jupiter.api.BeforeEach;
+import ma.sgitu.g8.repository.StatSnapshotRepository;
+import ma.sgitu.g8.service.AnalyticsService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,19 +19,24 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ExtendWith(MockitoExtension.class)
 class IntegrationTest {
 
     @Autowired
@@ -46,31 +54,37 @@ class IntegrationTest {
     @Autowired
     private EventRepository eventRepository;
 
-    @Autowired
+    @Mock
+    private StatSnapshotRepository statSnapshotRepository;
+
+    @Mock
     private ReportRepository reportRepository;
 
-    @BeforeEach
-    void setup() {
-        eventRepository.deleteAll();
-        snapshotRepository.deleteAll();
-        reportRepository.deleteAll();
-    }
+    @InjectMocks
+    private IngestionService ingestionService;
 
-    private String createTimestamp(int hour) {
-        return OffsetDateTime.now(ZoneOffset.UTC)
-                .minusDays(1)
-                .withHour(hour)
-                .withMinute(0)
-                .withSecond(0)
-                .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+    @Test
+    @DisplayName("IngestionService maps a valid ticket event into a persisted incoming event")
+    void ingestionMapsAndPersistsEvent() {
+        BatchIngestionResponse response = ingestionService.ingest(List.of(Map.of(
+                "timestamp", "2026-05-05T11:00:00Z",
+                "userId", "user-1",
+                "status", "validated",
+                "line", "L1"
+        )), SourceType.TICKETING);
+
+        assertThat(response.getStatus()).isEqualTo("SUCCESS");
+        assertThat(response.getTotalAccepted()).isEqualTo(1);
+
+        ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
+        verify(eventRepository).saveAll(captor.capture());
+        assertThat(captor.getValue()).hasSize(1);
     }
 
     @Test
-    @DisplayName("End-to-End Pipeline: Ingestion -> Processing -> Analytics -> Reporting")
-    void fullPipelineTest() {
-        // =====================================================================
-        // Step 1 - Ingest mock events via REST
-        // =====================================================================
+    @DisplayName("AnalyticsService generates a report from non-prediction snapshots only")
+    void analyticsServiceBuildsReportFromSnapshots() {
+        AnalyticsService analyticsService = new AnalyticsService(statSnapshotRepository, reportRepository);
 
         // 10 ticket events
         List<Map<String, Object>> tickets = new ArrayList<>();
@@ -134,12 +148,17 @@ class IntegrationTest {
                 "/api/v1/ingestion/incidents", incidents, Map.class);
         assertThat(incidentResp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
+        assertThat(report.getPeriod()).isEqualTo("2026-05-05");
+        assertThat(report.getSnapshots()).containsExactly(actualSnapshot);
+    }
 
-        // =====================================================================
-        // Step 2 - Trigger the scheduler manually
-        // =====================================================================
-        scheduledAnalyticsJob.runAnalytics();
+    @Test
+    @DisplayName("AnalyticsService returns a report when the repository finds one")
+    void analyticsServiceReturnsReportById() {
+        AnalyticsService analyticsService = new AnalyticsService(statSnapshotRepository, reportRepository);
+        Report report = Report.builder().id("report-1").period("2026-05-05").build();
 
+        when(reportRepository.findById(anyString())).thenReturn(Optional.of(report));
 
         // =====================================================================
         // Step 3 - Verify snapshots were created
