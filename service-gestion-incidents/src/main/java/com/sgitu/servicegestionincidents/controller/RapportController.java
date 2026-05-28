@@ -39,4 +39,14 @@ public class RapportController {
         Map<String, Object> tableauBord = rapportService.genererTableauBord();
         return ResponseEntity.ok(tableauBord);
     }
+
+    @GetMapping("/par-responsable/{responsableId}")
+    @PreAuthorize("hasAnyRole('ROLE_SUPERVISOR', 'ROLE_DISPATCHER')")
+    @Operation(summary = "Voir les stats d'interventions d'un agent terrain spécifique (combien résolus, escaladés, en cours)",
+               description = "Utile pour le Superviseur pour évaluer la charge de travail de chaque intervenant.")
+    public ResponseEntity<Map<String, Object>> obtenirStatsParResponsable(
+            @PathVariable Long responsableId) {
+        Map<String, Object> stats = rapportService.obtenirStatsParResponsable(responsableId);
+        return ResponseEntity.ok(stats);
+    }
 }

@@ -110,4 +110,32 @@ public class RapportServiceImpl implements RapportService {
 
         return dashboard;
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> obtenirStatsParResponsable(Long responsableId) {
+        log.info("Génération des statistiques d'interventions pour l'agent terrain : {}", responsableId);
+
+        List<Incident> incidents = incidentRepository.trouverIncidentsAffectes(responsableId);
+
+        long total = incidents.size();
+        long resolus = incidents.stream()
+                .filter(i -> i.getStatut() == StatutIncident.RESOLU || i.getStatut() == StatutIncident.CLOTURE)
+                .count();
+        long escalades = incidents.stream()
+                .filter(Incident::isEscalade)
+                .count();
+        long enCours = incidents.stream()
+                .filter(i -> i.getStatut() == StatutIncident.ASSIGNE || i.getStatut() == StatutIncident.EN_TRAITEMENT)
+                .count();
+
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("responsableId", responsableId);
+        stats.put("total", total);
+        stats.put("resolus", resolus);
+        stats.put("escalades", escalades);
+        stats.put("enCours", enCours);
+
+        return stats;
+    }
 }

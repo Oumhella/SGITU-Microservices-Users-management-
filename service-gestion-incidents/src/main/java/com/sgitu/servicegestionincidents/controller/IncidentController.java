@@ -179,6 +179,14 @@ public class IncidentController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/{id}/renforts")
+    @PreAuthorize("hasAnyRole('ROLE_TECHNICIAN', 'ROLE_DISPATCHER', 'ROLE_SUPERVISOR', 'ROLE_SECURITY', 'ROLE_MEDIC', 'ROLE_CLEANER')")
+    @Operation(summary = "Lister les agents en renfort sur un incident spécifique")
+    public ResponseEntity<List<RenfortDTO>> obtenirRenforts(@PathVariable Long id) {
+        List<RenfortDTO> renforts = incidentService.obtenirRenforts(id);
+        return ResponseEntity.ok(renforts);
+    }
+
     @PutMapping("/{id}/statut")
     @PreAuthorize("hasAnyRole('ROLE_TECHNICIAN', 'ROLE_DISPATCHER', 'ROLE_SUPERVISOR', 'ROLE_SECURITY', 'ROLE_MEDIC', 'ROLE_CLEANER')")
     @Operation(summary = "Mettre à jour le statut")

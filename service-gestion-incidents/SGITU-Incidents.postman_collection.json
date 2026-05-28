@@ -282,7 +282,34 @@
           "response": []
         },
         {
-          "name": "1.7 Demander une escalade",
+          "name": "1.7 Lister les renforts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "104"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "ROLE_TECHNICIAN"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{incidentId}}/renforts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{incidentId}}",
+                "renforts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "1.8 Demander une escalade",
           "request": {
             "method": "PUT",
             "header": [
@@ -318,7 +345,7 @@
           "response": []
         },
         {
-          "name": "1.8 Refuser une demande d'escalade",
+          "name": "1.9 Refuser une demande d'escalade",
           "request": {
             "method": "PUT",
             "header": [
@@ -354,7 +381,7 @@
           "response": []
         },
         {
-          "name": "1.9 Réessayer la demande d'escalade",
+          "name": "1.10 Réessayer la demande d'escalade",
           "request": {
             "method": "PUT",
             "header": [
@@ -390,7 +417,7 @@
           "response": []
         },
         {
-          "name": "1.10 Confirmer/Escalader l'incident",
+          "name": "1.11 Confirmer/Escalader l'incident",
           "request": {
             "method": "PUT",
             "header": [
@@ -426,7 +453,7 @@
           "response": []
         },
         {
-          "name": "1.11 Marquer comme Résolu (RESOLU)",
+          "name": "1.12 Marquer comme Résolu (RESOLU)",
           "request": {
             "method": "PUT",
             "header": [
@@ -462,7 +489,7 @@
           "response": []
         },
         {
-          "name": "1.12 Clôturer un incident",
+          "name": "1.13 Clôturer un incident",
           "request": {
             "method": "PUT",
             "header": [
@@ -498,7 +525,7 @@
           "response": []
         },
         {
-          "name": "1.13 Annuler un incident (Fausse alerte)",
+          "name": "1.14 Annuler un incident (Fausse alerte)",
           "request": {
             "method": "PUT",
             "header": [
@@ -857,6 +884,22 @@
               "raw": "{{baseUrl}}/rapports/tableau-bord",
               "host": [ "{{baseUrl}}" ],
               "path": [ "rapports", "tableau-bord" ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.7 Statistiques d'un intervenant (par-responsable)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-User-Id",   "value": "3" },
+              { "key": "X-User-Role", "value": "ROLE_SUPERVISOR" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rapports/par-responsable/104",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "rapports", "par-responsable", "104" ]
             }
           },
           "response": []
