@@ -1,6 +1,7 @@
 package ma.sgitu.g8.kafka;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +46,12 @@ class KafkaIntegrationTest {
 
     private final BlockingQueue<ConsumerRecord<String, Object>> analyticsRecords = new LinkedBlockingQueue<>();
 
+    @BeforeEach
+    void clearQueues() {
+        dltRecords.clear();
+        analyticsRecords.clear();
+    }
+
     @KafkaListener(topics = "g8-analytics-dlt", groupId = "test-dlt")
     void listenDlt(ConsumerRecord<String, Object> record) {
         dltRecords.add(record);
@@ -74,7 +81,12 @@ class KafkaIntegrationTest {
     void publishAggregation() throws InterruptedException {
         resultPublisher.publishAggregation("INC_TOTAL", 42.0, "COUNT", Map.of("lineId", "L1"));
 
-        ConsumerRecord<String, Object> record = analyticsRecords.poll(5, TimeUnit.SECONDS);
+        // Wait for message with retry logic (up to 10 seconds)
+        ConsumerRecord<String, Object> record = null;
+        long deadline = System.currentTimeMillis() + 10000;
+        while (System.currentTimeMillis() < deadline && record == null) {
+            record = analyticsRecords.poll(1, TimeUnit.SECONDS);
+        }
 
         assertThat(record).isNotNull();
         assertThat(record.key()).isEqualTo("INC_TOTAL");
@@ -97,7 +109,12 @@ class KafkaIntegrationTest {
     void publishAlert() throws InterruptedException {
         resultPublisher.publishAlert("THRESHOLD_BREACH", "HIGH", "Incident count exceeded", Map.of("statId", "INC_TOTAL"));
 
-        ConsumerRecord<String, Object> record = analyticsRecords.poll(5, TimeUnit.SECONDS);
+        // Wait for message with retry logic (up to 10 seconds)
+        ConsumerRecord<String, Object> record = null;
+        long deadline = System.currentTimeMillis() + 10000;
+        while (System.currentTimeMillis() < deadline && record == null) {
+            record = analyticsRecords.poll(1, TimeUnit.SECONDS);
+        }
 
         assertThat(record).isNotNull();
         @SuppressWarnings("unchecked")

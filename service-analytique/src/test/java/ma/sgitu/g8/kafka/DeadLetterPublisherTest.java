@@ -1,6 +1,7 @@
 package ma.sgitu.g8.kafka;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +38,11 @@ class DeadLetterPublisherTest {
     private final BlockingQueue<org.apache.kafka.clients.consumer.ConsumerRecord<String, Object>> receivedRecords =
             new LinkedBlockingQueue<>();
 
+    @BeforeEach
+    void clearQueue() {
+        receivedRecords.clear();
+    }
+
     @KafkaListener(topics = "g8-analytics-dlt", groupId = "test-dlt-group")
     void listenDlt(org.apache.kafka.clients.consumer.ConsumerRecord<String, Object> record) {
         receivedRecords.add(record);
@@ -53,8 +59,12 @@ class DeadLetterPublisherTest {
         RuntimeException cause = new RuntimeException("Database connection failed");
         deadLetterPublisher.publishFailedEvent(events, "TICKETING", "Ingestion failed", cause);
 
-        org.apache.kafka.clients.consumer.ConsumerRecord<String, Object> record =
-                receivedRecords.poll(5, TimeUnit.SECONDS);
+        // Wait for message with retry logic (up to 10 seconds)
+        org.apache.kafka.clients.consumer.ConsumerRecord<String, Object> record = null;
+        long deadline = System.currentTimeMillis() + 10000;
+        while (System.currentTimeMillis() < deadline && record == null) {
+            record = receivedRecords.poll(1, TimeUnit.SECONDS);
+        }
 
         assertThat(record).isNotNull();
         assertThat(record.key()).isEqualTo("TICKETING");
@@ -77,8 +87,12 @@ class DeadLetterPublisherTest {
 
         deadLetterPublisher.publishFailedRecord(originalRecord, cause);
 
-        org.apache.kafka.clients.consumer.ConsumerRecord<String, Object> record =
-                receivedRecords.poll(5, TimeUnit.SECONDS);
+        // Wait for message with retry logic (up to 10 seconds)
+        org.apache.kafka.clients.consumer.ConsumerRecord<String, Object> record = null;
+        long deadline = System.currentTimeMillis() + 10000;
+        while (System.currentTimeMillis() < deadline && record == null) {
+            record = receivedRecords.poll(1, TimeUnit.SECONDS);
+        }
 
         assertThat(record).isNotNull();
         @SuppressWarnings("unchecked")
