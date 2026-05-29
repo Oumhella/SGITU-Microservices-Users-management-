@@ -20,6 +20,12 @@ kafka:
     vehicle: g6-vehicle-events-test
     incident: g7-incident-events-test
     user: g1-user-events-test
+    dead-letter: g8-analytics-dlt-test
+    analytics-results: g8-analytics-results-test
+    ml-predictions: g8-ml-predictions-test
+  retry:
+    interval: 100
+    max-attempts: 2
 
 g5:
   notification:
