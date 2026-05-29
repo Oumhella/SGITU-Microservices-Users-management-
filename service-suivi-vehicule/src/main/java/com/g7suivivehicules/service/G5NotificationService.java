@@ -2,6 +2,9 @@ package com.g7suivivehicules.service;
 
 import com.g7suivivehicules.dto.G5NotificationRequest;
 import com.g7suivivehicules.entity.Alert;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +18,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -26,7 +30,10 @@ public class G5NotificationService {
     @Value("${g5.notification.url}")
     private String g5Url;
 
-    public void notifierConducteur(Alert alert) {
+    @CircuitBreaker(name = "g5NotificationService", fallbackMethod = "notifierConducteurFallback")
+    @Retry(name = "g5NotificationService")
+    @TimeLimiter(name = "g5NotificationService")
+    public CompletableFuture<Void> notifierConducteur(Alert alert) {
         try {
             String priority = determinerPriorite(alert.getTypeAlert());
             String message = genererMessageConducteur(alert);
@@ -62,9 +69,18 @@ public class G5NotificationService {
             log.info("[G5Notification] Notification PUSH envoyée pour véhicule {} (Alerte: {})",
                     alert.getVehiculeId(), alert.getTypeAlert());
 
+            return CompletableFuture.completedFuture(null);
+
         } catch (Exception e) {
             log.error("[G5Notification] Échec de l'envoi vers G5 : {}", e.getMessage());
+            return CompletableFuture.failedFuture(e);
         }
+    }
+
+    private CompletableFuture<Void> notifierConducteurFallback(Alert alert, Exception e) {
+        log.warn("[G5Notification] Circuit breaker activé - Notification fallback pour véhicule {}", alert.getVehiculeId());
+        // Optionnel: loguer l'alerte localement ou utiliser une autre méthode de notification
+        return CompletableFuture.completedFuture(null);
     }
 
     private String determinerPriorite(Alert.TypeAlert type) {
@@ -97,7 +113,10 @@ public class G5NotificationService {
         }
     }
 
-    public void notifierLogAdmin(String logLevel, String message) {
+    @CircuitBreaker(name = "g5NotificationService", fallbackMethod = "notifierLogAdminFallback")
+    @Retry(name = "g5NotificationService")
+    @TimeLimiter(name = "g5NotificationService")
+    public CompletableFuture<Void> notifierLogAdmin(String logLevel, String message) {
         try {
             Map<String, String> metadata = new HashMap<>();
             metadata.put("logLevel", logLevel);
@@ -127,9 +146,18 @@ public class G5NotificationService {
 
             log.info("[G5Notification] Notification LOG envoyée à l'admin - Level: {}, Message: {}", logLevel, message);
 
+            return CompletableFuture.completedFuture(null);
+
         } catch (Exception e) {
             log.error("[G5Notification] Échec de l'envoi de log vers G5 : {}", e.getMessage());
+            return CompletableFuture.failedFuture(e);
         }
+    }
+
+    private CompletableFuture<Void> notifierLogAdminFallback(String logLevel, String message, Exception e) {
+        log.warn("[G5Notification] Circuit breaker activé - Notification log fallback - Level: {}", logLevel);
+        // Optionnel: loguer le message localement
+        return CompletableFuture.completedFuture(null);
     }
 
     private String determinePriorityFromLogLevel(String logLevel) {
