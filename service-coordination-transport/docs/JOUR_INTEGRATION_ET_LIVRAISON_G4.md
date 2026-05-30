@@ -113,7 +113,7 @@ docker compose ps
 
 Dans un fichier `.env` à la racine G4 ou monorepo :
 ```env
-SGITU_G5_URL=http://g5-notification-service:8085
+SGITU_G5_URL=http://notification-service:8085
 ```
 Puis redémarrer G4 :
 ```powershell

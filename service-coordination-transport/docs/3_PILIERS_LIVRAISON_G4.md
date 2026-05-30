@@ -23,7 +23,8 @@ Tous les microservices tournent sur le **même réseau Docker** `sgitu-network`,
 ```bash
 cd SGITU-Microservices
 cp .env.example .env
-docker compose up -d --build g4-coordination g4-postgres notification-service mysql-notification kafka g3-user-service g3-users-db g7-service db-g7
+docker compose up -d --build g4-coordination g4-postgres kafka
+# G5/G3/G7 : lancer les services de chaque groupe dans le compose racine quand ils sont ajoutés
 ```
 
 ### Démarrage autonome G4 (démo groupe)

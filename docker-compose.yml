@@ -12,15 +12,15 @@
 #  G2  → 8082 (abonnement-service), 3307 (db-abonnement), 8080 (phpmyadmin)
 #  G3  → 8083 (user-service), 5433 (users-db)
 #  G4  → 8084 (g4-coordination), 5434 (g4-postgres)
-#  G5  → 8085 (notification-service) — à ajouter par le groupe G5
+#  G5  → 8085 (à définir par le groupe G5 — notification-service)
 #  G7  → 8087 (g7-service), 5437 (db-g7)
 #  Transverse → 9090 (prometheus), 3000 (grafana), 9093/29093 (kafka)
 #
 #  DÉMARRAGE :
 #    cp .env.example .env     # première fois — remplir g4_DB_*, JWT_SECRET, etc.
 #    docker compose up -d
-#  Monitoring (tous groupes) : prometheus.yml + services prometheus/grafana en bas du fichier
-#  G4 : job scrape dans prometheus.yml — dashboard Grafana détaillé en local (voir section G4)
+#  Monitoring : prometheus.yml (racine) — http://localhost:9090/targets | Grafana :3000
+#  Dashboard G4 local : service-coordination-transport/ + docker compose --profile monitoring
 # ================================================================
 
 services:
@@ -142,11 +142,6 @@ services:
 
   # ---------------------------------------------------------------
   #  G4 — Service Coordination Transport (port 8084)
-  #  Services : g4-coordination + g4-postgres (ci-dessous)
-  #  Monitoring G4 dans ce monorepo :
-  #    - Job Prometheus → fichier prometheus.yml (racine), target g4-coordination:8084
-  #    - Pas de conteneur prometheus/grafana ici (partagés en bas, section transverse)
-  #    - Dashboard Grafana G4 (dev) → service-coordination-transport/ + profil monitoring
   # ---------------------------------------------------------------
   g4-coordination:
     build:
@@ -202,7 +197,8 @@ services:
       - g4-db-network
 
   # ---------------------------------------------------------------
-  #  G5 — Service Notifications (port 8085) — à ajouter par le groupe G5
+  #  G5 — Notifications (port 8085) — à ajouter par le groupe G5
+  #  G4 consomme G5 via SGITU_G5_URL (hostname attendu : notification-service)
   # ---------------------------------------------------------------
 
   # ---------------------------------------------------------------
@@ -270,8 +266,8 @@ services:
   # ---------------------------------------------------------------
 
   # ---------------------------------------------------------------
-  # Observabilité transverse (TOUS les groupes — repo promo)
-  # prometheus.yml à la racine : chaque groupe y ajoute un job (G4 = g4-coordination:8084)
+  # Observabilité transverse (alignement repo promo — prometheus.yml racine)
+  # Dashboard Grafana G4 : voir service-coordination-transport/monitoring/ (profil local)
   # ---------------------------------------------------------------
   prometheus:
     image: prom/prometheus:latest
@@ -284,7 +280,6 @@ services:
       - sgitu-network
     depends_on:
       - g7-service
-      - g4-coordination
 
   grafana:
     image: grafana/grafana:latest
