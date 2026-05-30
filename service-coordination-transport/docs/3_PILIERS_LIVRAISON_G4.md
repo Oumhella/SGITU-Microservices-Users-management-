@@ -14,7 +14,7 @@ Tous les microservices tournent sur le **même réseau Docker** `sgitu-network`,
 
 | Fichier | Rôle |
 |---------|------|
-| `../docker-compose.yml` (racine monorepo) | Stack globale SGITU : G2, G3, **G4**, **G5**, G7, Kafka |
+| `../docker-compose.yml` (racine monorepo) | Stack globale SGITU : sections des autres groupes + **bloc G4** uniquement (pas de stack G5 ajoutée par G4) |
 | `docker-compose.yml` | Stack G4 seule (dev rapide) |
 | `docker-compose.yml` + profil `monitoring` | **Stack G4** : G4 + Kafka + Postgres + **Prometheus + Grafana** (sans G5) |
 

@@ -143,7 +143,7 @@ Rien à changer. `POST /api/notifications/send` → **DEGRADED** = comportement 
 
 ### Commit Git (si changements d'URL d'intégration)
 
-Exemple : URLs G3/G7 validées en séance → mettre à jour `docs/CONTRATS_ALIGNES_G4.md` et `.env.example`.
+Exemple : URLs G3/G7 validées en séance → mettre à jour `docs/CONTRATS_ALIGNES_G4.md` et **uniquement le bloc G4** dans `../.env.example` (pas les sections G5/G7/etc.).
 
 ### Pas besoin de refaire
 
