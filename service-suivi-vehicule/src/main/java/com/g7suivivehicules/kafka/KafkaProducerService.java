@@ -4,6 +4,7 @@ import com.g7suivivehicules.dto.G4AnomalieTerrainDTO;
 import com.g7suivivehicules.dto.G4PositionEventDTO;
 import com.g7suivivehicules.dto.G8VehiculeStatusDTO;
 import com.g7suivivehicules.dto.G9IncidentEventDTO;
+import com.g7suivivehicules.dto.VehiculeRegisteredEvent;
 import com.g7suivivehicules.entity.Alert;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
@@ -33,6 +34,28 @@ public class KafkaProducerService {
 
     @Value("${kafka.topic.g8}")
     private String topicG8;
+
+    @Value("${kafka.topic.vehicle.registered}")
+    private String topicVehicleRegistered;
+
+    // ========== VEHICULE ENREGISTRÉ ==========
+
+    /**
+     * Publie un événement "vehicle.registered" sur Kafka à chaque création d'un véhicule.
+     * Consommateurs : G4 (affectation ligne), G8 (initialisation statistiques).
+     */
+    @CircuitBreaker(name = "kafkaProducer", fallbackMethod = "publierVehiculeEnregistreFallback")
+    @Retry(name = "kafkaProducer")
+    public void publierVehiculeEnregistre(VehiculeRegisteredEvent event) {
+        kafkaTemplate.send(topicVehicleRegistered, event.getVehiculeId().toString(), event);
+        log.info("[KafkaProducer] Véhicule enregistré publié sur '{}' — vehiculeId={} immat={}",
+                topicVehicleRegistered, event.getVehiculeId(), event.getImmatriculation());
+    }
+
+    private void publierVehiculeEnregistreFallback(VehiculeRegisteredEvent event, Exception e) {
+        log.warn("[KafkaProducer] Circuit breaker activé — vehicle.registered non envoyé pour vehiculeId={} : {}",
+                event.getVehiculeId(), e.getMessage());
+    }
 
     public void publierAlerte(Alert alert) {
         // Envoi à G4 (Anomalies Terrain)
