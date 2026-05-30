@@ -55,14 +55,14 @@ Légende : `[x]` fait · `[ ]` à faire · `[~]` en cours / partiel
 
 ### C. Code & DevOps
 
-- [x] `src/` + `Dockerfile` + `docker-compose.yml` + `docker-compose.full-stack.yml`
+- [x] `src/` + `Dockerfile` + `docker-compose.yml` (profil `monitoring`)
 - [x] `README.md`
 - [x] Script ZIP `scripts/assemble-livraison-G4.ps1`
 
 ### Pilier 1 — Intégration sans couture
 
 - [x] Réseau Docker `sgitu-network` — G4 dans `../docker-compose.yml` racine
-- [x] Stack autonome `docker-compose.full-stack.yml` (G4 + monitoring, **sans G5**)
+- [x] Stack autonome `docker compose --profile monitoring` (G4 + monitoring, **sans G5**)
 - [ ] Test inter-groupes avec capture `docker network inspect sgitu-network`
 
 ### Pilier 2 — Observabilité

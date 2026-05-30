@@ -13,7 +13,7 @@ public class IntegrationProperties {
 
 	/** Service utilisateurs (G3). */
 	private String g3BaseUrl = "http://localhost:8083";
-	private boolean g3ValidationEnabled = false;
+	private boolean g3ValidationEnabled = true;
 	private boolean g3ValidationStrict = false;
 	/** Contrat G3 : GET /api/users/drivers/ids (context-path /api sur G3). */
 	private String g3DriversIdsPath = "/api/users/drivers/ids";

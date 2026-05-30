@@ -52,7 +52,7 @@ sgitu:
     expiration-ms: ${SGITU_JWT_EXPIRATION_MS:86400000}
   integration:
     g3-base-url: ${SGITU_G3_URL:http://localhost:8083}
-    g3-validation-enabled: ${SGITU_G3_VALIDATION_ENABLED:false}
+    g3-validation-enabled: ${SGITU_G3_VALIDATION_ENABLED:true}
     g3-validation-strict: ${SGITU_G3_VALIDATION_STRICT:false}
     g3-drivers-ids-path: ${SGITU_G3_DRIVERS_IDS_PATH:/api/users/drivers/ids}
     # Billetterie = G1. Les variables SGITU_G3_* mission restent acceptées (rétrocompat).

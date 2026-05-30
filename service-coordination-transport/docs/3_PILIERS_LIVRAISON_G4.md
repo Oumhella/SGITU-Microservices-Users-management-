@@ -16,7 +16,7 @@ Tous les microservices tournent sur le **même réseau Docker** `sgitu-network`,
 |---------|------|
 | `../docker-compose.yml` (racine monorepo) | Stack globale SGITU : G2, G3, **G4**, **G5**, G7, Kafka |
 | `docker-compose.yml` | Stack G4 seule (dev rapide) |
-| `docker-compose.full-stack.yml` | **Stack complète G4** : G4 + G5 + Kafka + Postgres + **Prometheus + Grafana** |
+| `docker-compose.yml` + profil `monitoring` | **Stack G4** : G4 + Kafka + Postgres + **Prometheus + Grafana** (sans G5) |
 
 ### Démarrage recommandé (monorepo)
 
@@ -30,7 +30,7 @@ docker compose up -d --build g4-coordination g4-postgres notification-service my
 
 ```bash
 cd service-coordination-transport
-docker compose -f docker-compose.full-stack.yml up -d --build
+docker compose --profile monitoring up -d --build
 ```
 
 ### Vérification réseau
@@ -131,7 +131,7 @@ Dossier captures : `rapport/captures/`
 
 ```bash
 # 1. Stack up
-docker compose -f docker-compose.full-stack.yml up -d
+docker compose --profile monitoring up -d
 
 # 2. Couper G5
 docker stop g5-notification-service

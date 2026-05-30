@@ -166,7 +166,7 @@ services:
       SGITU_G7_URL: http://g7-service:8087
       SGITU_G1_URL: ${G1_BASE_URL:-http://g1-billetterie:8081}
       SGITU_G9_URL: ${G9_BASE_URL:-http://g9-incidents:8089}
-      SGITU_G3_VALIDATION_ENABLED: ${SGITU_G3_VALIDATION_ENABLED:-false}
+      SGITU_G3_VALIDATION_ENABLED: ${SGITU_G3_VALIDATION_ENABLED:-true}
     depends_on:
       g4-postgres:
         condition: service_healthy

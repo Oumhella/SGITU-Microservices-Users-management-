@@ -62,12 +62,12 @@ pdflatex PRESENTATION_G4.tex
 |----------|---------|
 | `src/` complet | `src/main/java`, `src/main/resources`, `src/test` |
 | Dockerfile production | `Dockerfile` (multi-stage, user non-root) |
-| docker-compose + dépendances | `docker-compose.yml`, `docker-compose.full-stack.yml`, `../docker-compose.yml` (monorepo) |
+| docker-compose + dépendances | `docker-compose.yml` (profil `monitoring`), `../docker-compose.yml` (monorepo) |
 | README | `README.md` |
 
 **Lancer le projet :**
 ```bash
-docker compose -f docker-compose.full-stack.yml up -d --build
+docker compose --profile monitoring up -d --build
 .\mvnw.cmd test
 ```
 
@@ -104,7 +104,7 @@ G4_SGITU_Final.zip
     ├── src/
     ├── Dockerfile
     ├── docker-compose.yml
-    ├── docker-compose.full-stack.yml
+    ├── docker-compose.yml (+ profil monitoring)
     ├── README.md
     ├── postman/
     ├── docs/
@@ -116,7 +116,7 @@ G4_SGITU_Final.zip
 ## 5. Checklist avant envoi (23h59)
 
 - [ ] `mvn test` → SUCCESS
-- [ ] `docker compose -f docker-compose.full-stack.yml up -d` → OK
+- [ ] `docker compose --profile monitoring up -d` → OK
 - [ ] Rapport PDF compilé et relu
 - [ ] Slides PDF (10-15 pages)
 - [ ] Captures Postman (validation croisée + Chaos Monkey)

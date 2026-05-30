@@ -17,7 +17,7 @@ docker compose up -d --build
 
 **G4 + Prometheus + Grafana (monitoring — sans G5, autre groupe) :**
 ```bash
-docker compose -f docker-compose.full-stack.yml up -d --build
+docker compose --profile monitoring up -d --build
 # ou : .\scripts\start-g4-monitoring.ps1
 ```
 

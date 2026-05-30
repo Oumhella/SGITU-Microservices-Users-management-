@@ -85,7 +85,7 @@ services:
       SGITU_G1_URL: ${SGITU_G1_URL:-http://g1-billetterie:8081}
       SGITU_G7_URL: ${SGITU_G7_URL:-http://g7-service:8087}
       SGITU_G9_URL: ${SGITU_G9_URL:-http://g9-incidents:8089}
-      SGITU_G3_VALIDATION_ENABLED: ${SGITU_G3_VALIDATION_ENABLED:-false}
+      SGITU_G3_VALIDATION_ENABLED: ${SGITU_G3_VALIDATION_ENABLED:-true}
       SGITU_INTEGRATION_G5_NOTIFICATION_PATH: ${SGITU_INTEGRATION_G5_NOTIFICATION_PATH:-/api/notifications/send}
       SGITU_G1_MISSION_LIFECYCLE_PATH: ${SGITU_G1_MISSION_LIFECYCLE_PATH:-/api/internal/missions/events}
     depends_on:

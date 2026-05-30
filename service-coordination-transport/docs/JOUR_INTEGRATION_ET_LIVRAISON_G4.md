@@ -25,7 +25,7 @@
 | Code G4 | `src/` |
 | Dockerfile G4 | `Dockerfile` |
 | Compose G4 seul | `docker-compose.yml` |
-| Compose + monitoring | `docker-compose.full-stack.yml` |
+| Compose + monitoring | `docker-compose.yml` (profil `monitoring`) |
 | README | `README.md` |
 | Rapport PDF | `RAPPORT_G4_COORDINATION.pdf` |
 | Slides PDF | `PRESENTATION_G4.pdf` |
@@ -41,7 +41,7 @@ docker compose up -d --build
 
 **Avec Prometheus + Grafana (monitoring G4) :**
 ```powershell
-docker compose -f docker-compose.full-stack.yml up -d --build
+docker compose --profile monitoring up -d --build
 ```
 *ou :* `docker compose --profile monitoring up -d --build`
 
@@ -157,7 +157,7 @@ Exemple : URLs G3/G7 validées en séance → mettre à jour `docs/CONTRATS_ALIG
 
 ### Matériel à avoir sur le PC
 
-- [ ] Docker : stack G4 up (`docker compose up -d` ou full-stack)
+- [ ] Docker : stack G4 up (`docker compose up -d` ou `--profile monitoring`)
 - [ ] Postman collection importée
 - [ ] Slides PDF ouvertes
 - [ ] Onglets : health, logs, (optionnel) Prometheus
@@ -190,7 +190,7 @@ Exemple : URLs G3/G7 validées en séance → mettre à jour `docs/CONTRATS_ALIG
 docker compose up -d --build
 
 # G4 + Prometheus + Grafana
-docker compose -f docker-compose.full-stack.yml up -d --build
+docker compose --profile monitoring up -d --build
 
 # Arrêter
 docker compose down

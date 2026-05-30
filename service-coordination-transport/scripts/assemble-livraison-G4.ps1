@@ -47,7 +47,7 @@ Contenu:
 
 Démarrage rapide:
   cd service-coordination-transport
-  docker compose -f docker-compose.full-stack.yml up -d --build
+  docker compose --profile monitoring up -d --build
 
 Tests:
   .\mvnw.cmd test

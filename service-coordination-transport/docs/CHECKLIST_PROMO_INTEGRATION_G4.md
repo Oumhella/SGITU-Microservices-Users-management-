@@ -62,7 +62,7 @@ curl http://localhost:8084/api/g4/health
 
 **Référence locale déjà prête :** `service-coordination-transport/monitoring/prometheus.yml`
 
-**Compose G4 seul (dev)** : `docker-compose.full-stack.yml` — OK pour chez vous, **en plus** du compose promo.
+**Compose G4 seul (dev)** : `docker-compose.yml` + profil `monitoring` — OK chez vous, **en plus** du compose promo.
 
 ---
 
@@ -158,5 +158,5 @@ G3 a publié une **nouvelle nomenclature**. À **aligner** avec eux avant les te
 | Jour d’intégration | `docs/JOUR_INTEGRATION_ET_LIVRAISON_G4.md` |
 | Rôles G4 ↔ G3 | `docs/ROLES_G3_G4_ALIGNMENT.md` |
 | Rôles G4 ↔ G9 | `docs/ALIGNEMENT_ROLES_G3_G4_G9.md` |
-| Monitoring local | `monitoring/prometheus.yml`, `docker-compose.full-stack.yml` |
+| Monitoring local | `monitoring/prometheus.yml`, `docker compose --profile monitoring` |
 | CI/CD | `docs/CI_CD_G4.md` |

@@ -22,7 +22,7 @@ data:
   SGITU_G7_URL: "http://g7-service:8087"
   SGITU_G9_URL: "http://g9-incidents:8089"
   SGITU_G1_URL: "http://g1-billetterie:8081"
-  SGITU_G3_VALIDATION_ENABLED: "false"
+  SGITU_G3_VALIDATION_ENABLED: "true"
   SGITU_G9_INCIDENT_TOPIC: "incident.transport.topic"
   SGITU_G7_POSITIONS_TOPIC: "vehicule-positions"
   SGITU_G1_MISSION_TOPIC: "missions-lifecycle"

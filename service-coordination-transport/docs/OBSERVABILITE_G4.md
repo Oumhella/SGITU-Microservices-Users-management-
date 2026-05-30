@@ -63,7 +63,7 @@ Métriques clés :
 Démarrage (stack full) :
 
 ```bash
-docker compose -f docker-compose.full-stack.yml up -d prometheus grafana
+docker compose --profile monitoring up -d prometheus grafana
 ```
 
 - Prometheus : http://localhost:9090/targets → target `g4-coordination:8084` **UP**

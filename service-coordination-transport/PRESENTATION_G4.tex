@@ -258,7 +258,7 @@
 \begin{frame}{Plan de démonstration (soutenance)}
   \textbf{À faire devant le jury (5--7 min) :}
   \begin{enumerate}
-    \item \texttt{docker compose -f docker-compose.full-stack.yml ps}
+    \item \texttt{docker compose --profile monitoring ps}
     \item Postman : login \texttt{gestionnaire.flotte} $\rightarrow$ missions
     \item \texttt{/api/g4/health} et \texttt{/api/g4/logs} (sans token)
     \item \textbf{Bonus :} notification sans G5 sur le réseau $\rightarrow$ statut \texttt{DEGRADED} (Chaos Monkey)
@@ -273,7 +273,7 @@
 
 \begin{frame}{DevOps — Démarrage}
   \footnotesize
-  \texttt{docker compose -f docker-compose.full-stack.yml up -d --build}
+  \texttt{docker compose --profile monitoring up -d --build}
   \vspace{0.3cm}
   \begin{itemize}
     \item Port G4 : \textbf{8084}

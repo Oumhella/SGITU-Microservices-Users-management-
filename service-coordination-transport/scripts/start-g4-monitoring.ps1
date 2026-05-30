@@ -1,7 +1,7 @@
 # Démarre G4 + Postgres + Kafka + Prometheus + Grafana (sans G5)
 Set-Location $PSScriptRoot\..
 Write-Host "G4 + monitoring (Prometheus 9090, Grafana 3000)..." -ForegroundColor Cyan
-docker compose -f docker-compose.full-stack.yml up -d --build
+docker compose --profile monitoring up -d --build
 if ($LASTEXITCODE -eq 0) {
     Write-Host ""
     Write-Host "OK — URLs :" -ForegroundColor Green

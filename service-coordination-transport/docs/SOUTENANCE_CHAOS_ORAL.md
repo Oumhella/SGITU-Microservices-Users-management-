@@ -12,7 +12,7 @@
 
 ```bash
 cd service-coordination-transport
-docker compose -f docker-compose.full-stack.yml up -d --build
+docker compose --profile monitoring up -d --build
 ```
 
 Vérifier :
@@ -153,7 +153,7 @@ docker start g5-notification-service
 docker stop g4-coordination-service    # G4
 docker stop sgitu-kafka                # Kafka
 docker stop sgitu-g4-postgres          # DB G4 (éviter sauf pour montrer health DOWN)
-docker compose -f docker-compose.full-stack.yml ps
+docker compose --profile monitoring ps
 ```
 
 ---
