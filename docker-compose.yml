@@ -220,7 +220,7 @@ services:
     networks:
       - sgitu-network
     depends_on:
-      - abonnement-service
+      #- abonnement-service
       - g7-service
 
   grafana:
