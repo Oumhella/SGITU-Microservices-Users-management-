@@ -90,6 +90,19 @@ g5:
   templates:
     default-language: fr
 
+# ── Resilience4j — Circuit Breaker ──────────────────────────
+resilience4j:
+  circuitbreaker:
+    instances:
+      notificationProvider:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10            # Fenêtre de 10 appels pour calculer le taux d'échec
+        failure-rate-threshold: 50         # Ouvrir le circuit si ≥ 50% d'échecs
+        wait-duration-in-open-state: 30s   # Attendre 30s avant de passer en HALF_OPEN
+        permitted-number-of-calls-in-half-open-state: 3  # Appels test en HALF_OPEN
+        automatic-transition-from-open-to-half-open-enabled: true
+        register-health-indicator: true
+
 # ── Logging ─────────────────────────────────────────────────
 logging:
   level:
