@@ -43,9 +43,9 @@ public class UserController {
             Il est également appelé par G10 lors de l'inscription.
 
             **Rôles disponibles :** ROLE_PASSENGER, ROLE_STUDENT, ROLE_DRIVER,
-            ROLE_G4_DISPATCHER, ROLE_OPERATOR, ROLE_G4_OPERATOR, ROLE_TECHNICIAN, ROLE_ADMIN,
+            ROLE_DISPATCHER, ROLE_OPERATOR, ROLE_G4_OPERATOR, ROLE_TECHNICIAN, ROLE_ADMIN,
             ROLE_G1_ADMIN, ROLE_ADMIN_G2, ROLE_G4_ADMIN, ROLE_G7_ADMIN, ROLE_G9_ADMIN,
-            ROLE_G9_DISPATCHER, ROLE_SUPERVISOR, ROLE_SECURITY, ROLE_MEDIC, ROLE_CLEANER
+            ROLE_SUPERVISOR, ROLE_SECURITY, ROLE_MEDIC, ROLE_CLEANER
             """,
         security = {}   // public
     )
@@ -111,14 +111,14 @@ public class UserController {
         summary = "Récupérer les utilisateurs ayant un rôle spécifique",
         description = """
             Retourne la liste des utilisateurs possédant le rôle indiqué.
-            Utilisé notamment par G9 (Gestion des Incidents) pour notifier
-            tous les dispatchers ou superviseurs lors d'alertes ou d'escalades.
-            **Réservé aux administrateurs (ROLE_ADMIN).**
+            Utilisé notamment par la salle de contrôle pour notifier
+            les intervenants lors d'alertes ou d'escalades.
+            **Réservé aux superviseurs et dispatchers (ROLE_SUPERVISOR, ROLE_DISPATCHER).**
 
-            **Rôles valides :** ROLE_PASSENGER, ROLE_DRIVER, ROLE_G4_DISPATCHER,
+            **Rôles valides :** ROLE_PASSENGER, ROLE_DRIVER, ROLE_DISPATCHER,
             ROLE_OPERATOR, ROLE_G4_OPERATOR, ROLE_TECHNICIAN, ROLE_ADMIN,
             ROLE_G1_ADMIN, ROLE_ADMIN_G2, ROLE_G4_ADMIN, ROLE_G7_ADMIN, ROLE_G9_ADMIN,
-            ROLE_G9_DISPATCHER, ROLE_SUPERVISOR, ROLE_SECURITY, ROLE_MEDIC, ROLE_CLEANER,
+            ROLE_SUPERVISOR, ROLE_SECURITY, ROLE_MEDIC, ROLE_CLEANER,
             ROLE_STUDENT
             """,
         security = @SecurityRequirement(name = "bearerAuth")
@@ -130,13 +130,13 @@ public class UserController {
         @ApiResponse(responseCode = "401", description = "Token JWT absent ou invalide",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponseDTO.class))),
-        @ApiResponse(responseCode = "403", description = "Rôle ROLE_ADMIN requis",
+        @ApiResponse(responseCode = "403", description = "Rôle ROLE_SUPERVISOR ou ROLE_DISPATCHER requis",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponseDTO.class)))
     })
     @GetMapping("/roles/{roleName}")
     public ResponseEntity<List<UserResponseDTO>> getUsersByRole(
-            @Parameter(description = "Nom du rôle à rechercher", example = "ROLE_G9_DISPATCHER", required = true)
+            @Parameter(description = "Nom du rôle à rechercher", example = "ROLE_DISPATCHER", required = true)
             @PathVariable String roleName) {
         return ResponseEntity.ok(userService.getUsersByRole(roleName));
     }
@@ -305,9 +305,9 @@ public class UserController {
             **Réservé aux administrateurs (ROLE_ADMIN).**
 
             Rôles valides : ROLE_PASSENGER, ROLE_STUDENT, ROLE_DRIVER,
-            ROLE_G4_DISPATCHER, ROLE_OPERATOR, ROLE_G4_OPERATOR, ROLE_TECHNICIAN, ROLE_ADMIN,
+            ROLE_DISPATCHER, ROLE_OPERATOR, ROLE_G4_OPERATOR, ROLE_TECHNICIAN, ROLE_ADMIN,
             ROLE_G1_ADMIN, ROLE_ADMIN_G2, ROLE_G4_ADMIN, ROLE_G7_ADMIN, ROLE_G9_ADMIN,
-            ROLE_G9_DISPATCHER, ROLE_SUPERVISOR, ROLE_SECURITY, ROLE_MEDIC, ROLE_CLEANER
+            ROLE_SUPERVISOR, ROLE_SECURITY, ROLE_MEDIC, ROLE_CLEANER
             """,
         security = @SecurityRequirement(name = "bearerAuth")
     )

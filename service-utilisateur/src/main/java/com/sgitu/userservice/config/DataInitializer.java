@@ -23,7 +23,7 @@ public class DataInitializer implements CommandLineRunner {
             "ROLE_PASSENGER",   
             "ROLE_STUDENT",     
             "ROLE_DRIVER",      
-            "ROLE_G4_DISPATCHER",
+            "ROLE_DISPATCHER",
             "ROLE_OPERATOR",      
             "ROLE_G4_OPERATOR",   
             "ROLE_TECHNICIAN",  
@@ -33,8 +33,6 @@ public class DataInitializer implements CommandLineRunner {
             "ROLE_G4_ADMIN",
             "ROLE_G7_ADMIN",
             "ROLE_G9_ADMIN",
-            // G9 Aligned Roles
-            "ROLE_G9_DISPATCHER",
             "ROLE_SUPERVISOR",
             "ROLE_SECURITY",
             "ROLE_MEDIC",
