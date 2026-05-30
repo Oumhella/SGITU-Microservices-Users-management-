@@ -196,7 +196,11 @@ public class SubscriptionEventPublisher {
                 .build();
 
         log.info("Publishing {} event for user {}", type, user.getId());
-        kafkaTemplate.send(topic, event);
+        try {
+            kafkaTemplate.send(topic, event);
+        } catch (Exception e) {
+            log.error("Échec de l'envoi de la notification Kafka (type: {}): {}", type, e.getMessage());
+        }
     }
 
     // --- CORE SEND METHOD (Direct userId/email version) ---
@@ -219,6 +223,10 @@ public class SubscriptionEventPublisher {
                 .build();
 
         log.info("Publishing {} event for user {}", type, userId);
-        kafkaTemplate.send(topic, event);
+        try {
+            kafkaTemplate.send(topic, event);
+        } catch (Exception e) {
+            log.error("Échec de l'envoi direct de la notification Kafka (type: {}): {}", type, e.getMessage());
+        }
     }
 }
