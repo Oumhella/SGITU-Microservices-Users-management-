@@ -11,11 +11,16 @@
 #  PORTS UTILISÉS :
 #  G2  → 8082 (abonnement-service), 3307 (db-abonnement), 8080 (phpmyadmin)
 #  G3  → 8083 (user-service), 5433 (users-db)
+#  G4  → 8084 (g4-coordination), 5434 (g4-postgres)
+#  G5  → 8085 (à définir par le groupe G5 — notification-service)
 #  G7  → 8087 (g7-service), 5437 (db-g7)
+#  Transverse → 9090 (prometheus), 3000 (grafana), 9093/29093 (kafka)
 #
 #  DÉMARRAGE :
-#    cp .env.example .env     # première fois
+#    cp .env.example .env     # première fois — remplir g4_DB_*, JWT_SECRET, etc.
 #    docker compose up -d
+#  Monitoring : prometheus.yml (racine) — http://localhost:9090/targets | Grafana :3000
+#  Dashboard G4 local : service-coordination-transport/ + docker compose --profile monitoring
 # ================================================================
 
 services:
@@ -140,8 +145,60 @@ services:
       - sgitu-network
 
   # ---------------------------------------------------------------
-  #  G4 — (ajoutez votre service ici)
+  #  G4 — Service Coordination Transport (port 8084)
   # ---------------------------------------------------------------
+  g4-coordination:
+    build:
+      context: ./service-coordination-transport
+      dockerfile: Dockerfile
+    container_name: g4-coordination-service
+    hostname: g4-coordination
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: "8084"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://g4-postgres:5432/${g4_DB_NAME:-sgitu_g4}
+      SPRING_DATASOURCE_USERNAME: ${g4_DB_USER:-g4}
+      SPRING_DATASOURCE_PASSWORD: ${g4_DB_PASSWORD:-g4}
+      JPA_DDL_AUTO: update
+      SGITU_KAFKA_ENABLED: "true"
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SGITU_JWT_SECRET: ${JWT_SECRET:-SGlUVS1HNC1KV1QtU0VDUkVOLURFVl8xMjhCaXRzX19VU0VfRU5WX1ZBUiMjIw==}
+      SGITU_G3_URL: http://g3-user-service:8083
+      SGITU_G5_URL: http://notification-service:8085
+      SGITU_G10_URL: ${G10_BASE_URL:-http://g10-service:8090}
+      SGITU_G7_URL: http://g7-service:8087
+      SGITU_G1_URL: ${G1_BASE_URL:-http://g1-billetterie:8081}
+      SGITU_G9_URL: ${G9_BASE_URL:-http://g9-incidents:8089}
+      SGITU_G3_VALIDATION_ENABLED: ${SGITU_G3_VALIDATION_ENABLED:-true}
+    depends_on:
+      g4-postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - sgitu-network
+      - g4-db-network
+
+  g4-postgres:
+    image: postgres:16-alpine
+    container_name: g4-postgres
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: ${g4_DB_NAME:-sgitu_g4}
+      POSTGRES_USER: ${g4_DB_USER:-g4}
+      POSTGRES_PASSWORD: ${g4_DB_PASSWORD:-g4}
+    volumes:
+      - g4_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${g4_DB_USER:-g4} -d ${g4_DB_NAME:-sgitu_g4}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - g4-db-network
 
   # ---------------------------------------------------------------
   #  G5 — (ajoutez votre service ici)
@@ -212,7 +269,8 @@ services:
   # ---------------------------------------------------------------
 
   # ---------------------------------------------------------------
-  # Services transversaux (Observabilité)
+  # Observabilité transverse (alignement repo promo — prometheus.yml racine)
+  # Dashboard Grafana G4 : voir service-coordination-transport/monitoring/ (profil local)
   # ---------------------------------------------------------------
   prometheus:
     image: prom/prometheus:latest
@@ -224,7 +282,6 @@ services:
     networks:
       - sgitu-network
     depends_on:
-      #- abonnement-service
       - g7-service
       - user-service
 
@@ -291,10 +348,13 @@ networks:
     driver: bridge
   g7-db-network:
     driver: bridge
+  g4-db-network:
+    driver: bridge
 
 volumes:
   g3_users_data:
   abonnement_data:
   g7_db_data:
+  g4_pg_data:
   kafka_data:
   grafana-data:
