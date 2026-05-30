@@ -74,7 +74,7 @@ services:
     image: phpmyadmin:latest
     container_name: phpmyadmin
     ports:
-      - "8080:80"
+      - "8085:80"
     environment:
       - PMA_ARBITRARY=1
       - PMA_HOST=db-abonnement
@@ -83,7 +83,6 @@ services:
       - db-abonnement
     networks:
       - abonnement-db-network
-  # ---------------------------------------------------------------
   #  G3 — Service Utilisateur (port 8083)
   # ---------------------------------------------------------------
   user-service:
@@ -308,6 +307,35 @@ services:
   # ---------------------------------------------------------------
 
   # ---------------------------------------------------------------
+  # Services transversaux (Observabilité)
+  # ---------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - sgitu-network
+    depends_on:
+      - abonnement-service
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - sgitu-network
+    depends_on:
+      - prometheus
+
+  # ---------------------------------------------------------------
   # Services transversaux (Kafka)
   # ---------------------------------------------------------------
   kafka:
@@ -346,6 +374,7 @@ services:
       retries: 10
       start_period: 30s
 
+
 networks:
   sgitu-network:
     driver: bridge
@@ -365,3 +394,4 @@ volumes:
   g4_pg_data:
   notification_mysql_data:
   kafka_data:
+  grafana-data:
