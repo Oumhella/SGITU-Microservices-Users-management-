@@ -63,6 +63,7 @@ public class SecurityConfig {
 
                 // Admin endpoints
                 .requestMatchers(HttpMethod.GET, "/users").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/users/roles/*").hasAnyRole("ADMIN", "G9_ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/users/*/roles").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/users/*/deactivate").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/users/*/activate").hasRole("ADMIN")
