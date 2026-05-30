@@ -1,5 +1,5 @@
 # Étape 1 : Build (Utilisation d'une image compatible ARM/Mac)
-FROM eclipse-temurin:17-jdk AS build
+FROM eclipse-temurin:17-jdk-alpine AS build
 WORKDIR /app
 RUN apk add --no-cache maven
 COPY pom.xml .

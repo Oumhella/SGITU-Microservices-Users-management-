@@ -47,7 +47,7 @@
       "gridPos": { "h": 6, "w": 6, "x": 12, "y": 1 },
       "id": 3,
       "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
-      "targets": [{ "expr": "last_over_time(sgitu_inc[5m])", "refId": "A" }],
+      "targets": [{ "expr": "sgitu_inc", "refId": "A" }],
       "title": "Incidents Total",
       "type": "stat"
     },
@@ -101,18 +101,8 @@
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": { "defaults": { "unit": "short" } },
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
-      "id": 7,
-      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
-      "targets": [{ "expr": "last_over_time(sgitu_events_ingested_total[5m])", "legendFormat": "{{source}}", "refId": "A", "instant": true }],
-      "title": "Événements ingérés par source (G1–G7)",
-      "type": "barchart"
-    },
-    {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
       "id": 102,
       "title": "Incidents & Zones",
       "type": "row"
@@ -123,7 +113,7 @@
       "gridPos": { "h": 6, "w": 6, "x": 0, "y": 25 },
       "id": 8,
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
-      "targets": [{ "expr": "last_over_time(sgitu_inc_repeat_zones[5m])", "refId": "A" }],
+      "targets": [{ "expr": "sgitu_inc_repeat_zones", "refId": "A" }],
       "title": "Zones à incidents répétés",
       "type": "stat"
     },
@@ -133,7 +123,7 @@
       "gridPos": { "h": 8, "w": 18, "x": 6, "y": 25 },
       "id": 9,
       "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
-      "targets": [{ "expr": "last_over_time(sgitu_inc_by_zone[5m])", "legendFormat": "{{zone}}", "refId": "A", "instant": true }],
+      "targets": [{ "expr": "sgitu_inc_by_zone", "legendFormat": "{{zone}}", "refId": "A", "instant": true }],
       "title": "Incidents par zone (coordonnées)",
       "type": "barchart"
     },

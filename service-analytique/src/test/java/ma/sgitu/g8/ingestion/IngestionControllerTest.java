@@ -4,16 +4,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ma.sgitu.g8.ingestion.dto.BatchIngestionResponse;
 import ma.sgitu.g8.model.SourceType;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -22,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(IngestionController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class IngestionControllerTest {
 
     @Autowired
@@ -32,6 +37,34 @@ class IngestionControllerTest {
 
     @MockBean
     private IngestionService ingestionService;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setupGlobalMock() {
+        when(ingestionService.ingest(anyList(), org.mockito.ArgumentMatchers.any())).thenAnswer(invocation -> {
+            List<Map<String, Object>> events = invocation.getArgument(0);
+            int received = events.size();
+            int rejected = 0;
+            String reason = "Rejected event";
+            for (Map<String, Object> event : events) {
+                if (event.containsKey("garbage")) {
+                    rejected++;
+                } else if (!event.containsKey("schemaVersion") || !Integer.valueOf(1).equals(event.get("schemaVersion"))) {
+                    rejected++;
+                    reason = "schemaVersion missing or invalid";
+                }
+            }
+            int accepted = received - rejected;
+            String status = rejected == received ? "REJECTED" : (rejected > 0 ? "PARTIAL" : "SUCCESS");
+
+            return BatchIngestionResponse.builder()
+                .status(status)
+                .totalReceived(received)
+                .totalAccepted(accepted)
+                .totalRejected(rejected)
+                .rejectedReasons(rejected == 0 ? List.of() : List.of(reason))
+                .build();
+        });
+    }
 
     @Test
     @DisplayName("POST /api/v1/ingestion/tickets returns 201 when the batch is successful")
@@ -136,6 +169,11 @@ class IngestionControllerTest {
                 "userId", "u-001",
                 "action", action
         );
+    }
+
+    /** Returns a valid ISO-8601 timestamp string. */
+    private String validTs() {
+        return Instant.now().toString();
     }
 
     /** An event guaranteed to fail validation – no timestamp field. */
@@ -449,6 +487,8 @@ class IngestionControllerTest {
             mockMvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON).content("[]"))
                     .andExpect(status().isBadRequest());
         }
+    }
+
     @Test
     @DisplayName("POST /api/v1/ingestion/users returns 400 for an empty batch")
     void usersBatchEmpty() throws Exception {
@@ -467,7 +507,6 @@ class IngestionControllerTest {
                 .totalRejected(rejected)
                 .rejectedReasons(rejected == 0 ? List.of() : List.of("Rejected event"))
                 .build();
-    }
     }
 
     // =========================================================================

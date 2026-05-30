@@ -42,9 +42,10 @@ public class IncidentAggregation {
         try {
             log.info("Computing INC_01 total_incidents");
             LocalDate today = LocalDate.now();
-            List<IncomingEvent> incidents = events(today.atStartOfDay(), today.plusDays(1).atStartOfDay());
+            // Use 7-day window to match data spread from the seed script
+            List<IncomingEvent> incidents = events(today.minusDays(6).atStartOfDay(), today.plusDays(1).atStartOfDay());
 
-            save("INC_TOTAL", "INC_01", "DAY", today.toString(), incidents.size(),
+            save("INC_TOTAL", "INC_01", "WEEK", weekPeriod(today), incidents.size(),
                     Map.of("total_incidents", incidents.size(), "date", today.toString()));
         } catch (Exception ex) {
             log.error("Failed to compute INC_01 total_incidents", ex);

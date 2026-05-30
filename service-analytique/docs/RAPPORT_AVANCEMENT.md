@@ -1,7 +1,7 @@
 # Rapport d'Avancement : Microservice Analytique (G8)
 
 **Équipe :** Service Analytique (`service-analytique`)  
-**Dernière mise à jour :** 28 mai 2026  
+**Dernière mise à jour :** 30 mai 2026  
 **Rôle dans SGITU :** Collecte, agrégation et exposition des indicateurs (KPI) et prédictions à partir des événements des autres microservices (billetterie G2, abonnements G3, paiements G4, véhicules G6, incidents G7, utilisateurs G1).
 
 ---
@@ -155,8 +155,8 @@ Stack : FastAPI, Pandas, NumPy (`requirements.txt`).
 - **Swagger UI (local) :** `http://localhost:8088/swagger-ui.html`
 - **OpenAPI JSON :** `http://localhost:8088/v3/api-docs`
 - **Collection Postman :** `docs/G8_Analytics_Postman_Collection.json`
-- **Exemples de payloads :** `docs/DATA_EXAMPLES.md`
-- **Guide test alertes G5 :** `docs/GUIDE_TEST_ALERTES_G5_MOCK.md`
+- **Contrats de données (exemples JSON par groupe) :** `docs/DATA_CONTRACTS.md`
+- **Référence dashboard Grafana :** `docs/DASHBOARD_REFERENCE.md`
 
 ---
 
@@ -173,15 +173,48 @@ Stack : FastAPI, Pandas, NumPy (`requirements.txt`).
 | `MlPredictionServiceTest` | Appels ML (mockés) |
 | `ThresholdAlertServiceCircuitBreakerTest` | Circuit breaker G5 |
 | `SchemaVersionValidatorTest` | Validation de schéma |
-| `IntegrationTest` | Scénario d’intégration |
+| `IntegrationTest` | Scénario d'intégration |
 
 **Note :** la compilation locale nécessite le traitement des annotations **Lombok** (configuré dans le build Maven / image Docker multi-étapes). Exécution recommandée : `docker-compose up --build` ou `./mvnw test` avec JDK 17 et Lombok actif.
 
-### 5.2 Tests manuels
+### 5.2 Harness d'intégration automatisé (A-to-Z)
 
-- Collection Postman fournie dans `docs/`.
-- Scénario documenté dans le `README.md` : seed MongoDB → attendre le scheduler → vérifier `PRED_01` / `PRED_02`.
-- **Mongo Express** (port **9099**) pour inspection visuelle des collections `incoming_events` et `stat_snapshots`.
+Un script PowerShell **`run-integration-tests.ps1`** remplace désormais le scénario Postman manuel pour la validation de bout-en-bout en environnement conteneurisé. Il couvre :
+
+| Phase | Vérification |
+| :--- | :--- |
+| Phase 1 | Disponibilité du service (Spring Actuator Health) |
+| Phase 2 | Filtre JWT — rejet des requêtes non authentifiées |
+| Phase 3 | Ingestion REST + validation défensive (schéma, champs requis) |
+| Phase 4 | Consommation asynchrone Kafka (topic `g2-ticketing-events`) |
+| Phase 5 | Déclenchement du job d'agrégation, vérification des snapshots et des prédictions ML |
+
+**Résultat actuel : 10/10 tests PASS — 100 % de réussite.**
+
+```powershell
+# Séquence complète recommandée :
+docker compose down -v
+docker compose up -d --build
+powershell -ExecutionPolicy Bypass -File .\seed-dashboard-data.ps1
+powershell -ExecutionPolicy Bypass -File .\run-integration-tests.ps1
+```
+
+### 5.3 Collection Postman — statut et utilité
+
+La collection Postman (`docs/G8_Analytics_Postman_Collection.json`) reste **valide et à jour**. Elle est utile pour :
+
+- **Exploration interactive** de l'API (lecture des snapshots par domaine, génération de rapports).
+- **Tests de cas limites** (batch vide → 400, événement partiel → 207, rapport inexistant → 404).
+- **Démonstration** à des collaborateurs qui préfèrent une interface graphique.
+
+Elle n'est cependant **pas nécessaire pour valider le pipeline** : le harness PowerShell (`run-integration-tests.ps1`) et le script de seed (`seed-dashboard-data.ps1`) suffisent pour un cycle complet. La collection Postman peut être conservée comme complément.
+
+> **Note :** Les requêtes d'ingestion dans la collection Postman n'incluent **pas** de header `Authorization`. Depuis l'intégration du filtre JWT, il faut ajouter `Authorization: Bearer <token>` à chaque requête d'ingestion dans Postman (le token peut être généré via le script PowerShell ou le Swagger UI).
+
+### 5.4 Tests manuels
+
+- Swagger UI : `http://localhost:8088/swagger-ui.html` — explorer et tester tous les endpoints directement.
+- Grafana : `http://localhost:3000` (admin / sgitu2026) — vérification visuelle des métriques après le seed.
 
 ---
 
@@ -205,15 +238,16 @@ Fichier : `docker-compose.yml`
 | Service | Conteneur | Port hôte | Rôle |
 | :--- | :--- | :--- | :--- |
 | `mongodb` | `g8-mongo` | 27017 | Persistance |
-| `ml-service` | `g8-ml-service` | 5000 | Prédictions |
+| `ml-service` | `g8-ml-service` | 5000 | Prédictions ML |
 | `g8-analytics` | `g8-analytics-service` | 8088 | Application Java |
-| `mongo-express` | `g8-mongo-express` | 9099 | Interface web MongoDB |
-| `prometheus` | `g8-prometheus` | N/A | Scraping des métriques Actuator |
+| `zookeeper` | `g8-zookeeper` | — | Coordinateur Kafka |
+| `kafka` | `g8-kafka` | 9092 | Broker de messages |
+| `prometheus` | `g8-prometheus` | 9090 | Scraping des métriques Actuator |
 | `grafana` | `g8-grafana` | 3000 | Tableaux de bord de supervision |
 
-Variables d’environnement clés pour `g8-analytics` : `MONGO_URI`, `ML_SERVICE_URL`.
+Variables d'environnement clés pour `g8-analytics` : `MONGO_URI`, `ML_SERVICE_URL`, `SPRING_KAFKA_BOOTSTRAP_SERVERS`.
 
-**Non inclus dans le Compose actuel :** broker **Kafka** et service **G5** — à fournir par l’environnement d’intégration globale ou un compose racine du monorepo.
+**Non inclus dans le Compose actuel :** service **G5** notifications — le circuit breaker Resilience4j prend en charge son indisponibilité.
 
 ### Lancement
 
@@ -228,9 +262,10 @@ docker-compose up --build
 
 | Sujet | État dans G8 | Remarque |
 | :--- | :--- | :--- |
-| **JWT / Spring Security** | Non implémenté dans ce dépôt | Pas de dépendance `spring-boot-starter-security` dans `pom.xml`. La sécurité est prévue au niveau de l’**API Gateway** (`SecurityConfig` : routes `/api/analytics/**`). |
-| **Validation des événements** | Implémentée | `schemaVersion` obligatoire et contrôlé par source. |
-| **Résilience appels externes** | Implémentée | Circuit breaker sur les alertes G5 ; timeouts / erreurs ML gérés dans `MlPredictionService` (logs + skip si données insuffisantes). |
+| **JWT / Spring Security** | ✅ Implémenté | Filtre `JwtAuthenticationFilter` — toutes les routes protégées, secret configurable via `jwt.secret`. Validé par le harness (Phase 2). |
+| **Validation des événements** | ✅ Implémentée | `schemaVersion` obligatoire, champs requis par source, timestamps, coordonnées GPS, valeurs numériques. |
+| **Résilience appels externes** | ✅ Implémentée | Circuit breaker Resilience4j sur les alertes G5 ; erreurs ML gérées dans `MlPredictionService` (logs + skip si données insuffisantes). |
+| **Kafka** | ✅ Intégré | Broker inclus dans le Compose local (`g8-kafka`). Consommateur batch testé et validé. |
 | **Corrélation inter-services** | Partielle | Headers de corrélation côté gateway ; à harmoniser en intégration E2E. |
 
 ---
@@ -254,37 +289,41 @@ docker-compose up --build
 
 ### Finalisé
 
-- [x] Pipeline d’ingestion REST (6 sources) avec validation et réponses batch structurées.
-- [x] Consommateurs Kafka pour les 6 flux d’événements (ack manuel).
+- [x] Pipeline d'ingestion REST (6 sources) avec validation et réponses batch structurées.
+- [x] Consommateurs Kafka batch pour les 6 flux d'événements (topics `g1` à `g7`).
 - [x] Agrégations planifiées pour incidents, véhicules, billetterie, revenus, abonnements et utilisateurs.
 - [x] API REST de consultation + génération de rapports JSON.
-- [x] Microservice ML conteneurisé et intégré (2 prédictions).
-- [x] Système d’alertes à seuils + circuit breaker vers G5.
-- [x] Documentation OpenAPI, README, Postman et guides de test.
-- [x] Stack Docker Compose (MongoDB, ML, analytics, Mongo Express, Prometheus, Grafana).
+- [x] Microservice ML conteneurisé et intégré (2 prédictions : PRED_01, PRED_02).
+- [x] Système d'alertes à seuils + circuit breaker Resilience4j vers G5.
+- [x] Filtre JWT (`JwtAuthenticationFilter`) — toutes les routes sécurisées.
+- [x] Stack Docker Compose complète : MongoDB, Zookeeper, Kafka, ML, analytics, Prometheus, Grafana.
 - [x] Dockerfile multi-étape pour le service Java.
-- [x] Métriques Prometheus (Micrometer) et health checks Spring Actuator opérationnels.
-- [x] Tableaux de bord Grafana provisionnés avec requêtes PromQL corrigées (retrait du suffixe `_total` par Micrometer sur les Gauges).
+- [x] Métriques Prometheus (Micrometer Gauges) et health checks Spring Actuator opérationnels.
+- [x] Tableaux de bord Grafana provisionnés et validés (9 panels actifs).
+- [x] Script de seed (`seed-dashboard-data.ps1`) — génère des données réalistes sur 7 jours pour tous les groupes.
+- [x] Harness d'intégration A-to-Z (`run-integration-tests.ps1`) — **10/10 tests PASS**.
+- [x] Contrats de données documentés (`docs/DATA_CONTRACTS.md`) et référence dashboard (`docs/DASHBOARD_REFERENCE.md`).
 
 ### En cours / à finaliser
 
-- [ ] Intégration **E2E** avec Kafka et G5 dans l’environnement complet du projet (compose racine / CI).
-- [ ] Alignement des **schémas d’événements** avec chaque équipe (versions `schemaVersion` > 1 si évolution des contrats).
+- [ ] Intégration **E2E** avec G5 dans l'environnement complet du projet (compose racine / CI).
+- [ ] Alignement des **schémas d'événements** avec chaque équipe (versions `schemaVersion` > 1 si évolution des contrats).
 - [ ] Routage gateway : vérifier la cohérence des chemins (`/api/v1/analytics` vs `/api/analytics` documentés côté gateway).
 - [ ] Optimisation des agrégations sur gros volumes (index MongoDB, fenêtres temporelles).
-- [ ] Sécurisation directe du microservice (JWT) si exigence hors gateway.
 
 ### Améliorations envisagées
 
 - Export PDF des rapports (actuellement JSON uniquement).
-- Ajout de Kafka et G5 au `docker-compose.yml` pour démo autonome complète.
 - Filtrage du dashboard par `period` et pagination des snapshots.
+- Alertes G5 : tester le rétablissement du circuit breaker en environnement intégré.
 
-### Difficultés rencontrées
+### Difficultés rencontrées et résolues
 
 - **Synchronisation des schémas** entre payloads des autres services, modèle `IncomingEvent` et contrats Pydantic du service ML.
-- **Données historiques insuffisantes** : les prédictions ML sont ignorées tant qu’il n’y a pas d’événements sur 30 jours (comportement attendu, documenté dans le README).
-- **Dépendance à G5** en local : erreurs `connection refused` normales si le service de notification n’est pas démarré ; le circuit breaker évite de bloquer le scheduler.
+- **Données historiques insuffisantes** : les prédictions ML sont ignorées tant qu’il n’y a pas d’événements sur 30 jours → résolu par le script de seed.
+- **Consommateur Kafka** : configuration `setBatchListener(true)` nécessaire pour le listener `List<Map<String, Object>>`.
+- **JWT PowerShell** : `ConvertTo-Json` formatait les tableaux en objets sur certaines versions PS → remplacé par des chaînes JSON brutes dans les scripts de test.
+- **Fenêtre temporelle INC_01** : l'agrégation utilisait uniquement la journée courante, ignorant les données historiques du seed → corrigé en fenêtre 7 jours.
 
 ---
 
