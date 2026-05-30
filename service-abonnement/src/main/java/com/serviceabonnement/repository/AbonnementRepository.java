@@ -22,5 +22,7 @@ public interface AbonnementRepository extends JpaRepository<Abonnement, Long> {
 
     Optional<Abonnement> findByPaiementId(String paiementId);
 
+    java.util.Optional<Abonnement> findByUserIdAndPlanIdPlanAndStatut(Long userId, Long idPlan, StatutAbonnement statut);
+
     Optional<Abonnement> findByRemboursementId(String remboursementId);
 }

@@ -24,7 +24,12 @@ public class JwtUtils {
     }
 
     public String extractEmail(String token) {
-        return (String) extractAllClaims(token).get("email");
+        Claims claims = extractAllClaims(token);
+        String email = (String) claims.get("email");
+        if (email == null) {
+            email = claims.getSubject();
+        }
+        return email;
     }
 
     /**

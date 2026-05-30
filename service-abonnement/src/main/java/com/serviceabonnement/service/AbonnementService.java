@@ -35,4 +35,5 @@ public interface AbonnementService {
     void confirmerPaiement(PaymentCallbackDTO callback);
     void confirmerRemboursement(RefundCallbackDTO callback);
     ActiveSubscriptionResponseDTO verifierAbonnementActif(Long userId);
+    Double calculerRemboursement(Abonnement abonnement);
 }
