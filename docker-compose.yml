@@ -314,7 +314,7 @@ services:
 
   # ---------------------------------------------------------------
   # Observabilité transverse (alignement repo promo — prometheus.yml racine)
-  # Dashboard Grafana G4 : voir service-coordination-transport/monitoring/ (profil local)
+
   # ---------------------------------------------------------------
   prometheus:
     image: prom/prometheus:latest
