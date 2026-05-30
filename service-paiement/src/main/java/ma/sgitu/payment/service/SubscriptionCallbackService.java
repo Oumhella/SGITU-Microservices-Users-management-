@@ -2,7 +2,10 @@ package ma.sgitu.payment.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import ma.sgitu.payment.client.SubscriptionClient;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 import ma.sgitu.payment.entity.Payment;
 import ma.sgitu.payment.entity.Refund;
 import ma.sgitu.payment.enums.SourceType;
@@ -16,7 +19,10 @@ import java.util.Map;
 @Slf4j
 public class SubscriptionCallbackService {
 
-    private final SubscriptionClient subscriptionClient;
+    private final RestTemplate restTemplate;
+
+    @Value("${subscription.service.url:http://localhost:8082}")
+    private String subscriptionServiceUrl;
 
     public void sendPaymentConfirmation(Payment payment) {
         if (payment.getSourceType() != SourceType.SUBSCRIPTION) {
@@ -36,7 +42,9 @@ public class SubscriptionCallbackService {
         }
 
         try {
-            subscriptionClient.confirmPayment(data);
+            String url = subscriptionServiceUrl + "/abonnements/paiement/confirmation";
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(data);
+            restTemplate.postForEntity(url, request, Void.class);
             log.info("Confirmation paiement envoyée à G2 avec succès");
         } catch (Exception e) {
             log.error("Échec envoi confirmation paiement vers G2: {}", e.getMessage());
@@ -63,7 +71,9 @@ public class SubscriptionCallbackService {
         }
 
         try {
-            subscriptionClient.confirmRefund(data);
+            String url = subscriptionServiceUrl + "/abonnements/remboursement/confirmation";
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(data);
+            restTemplate.postForEntity(url, request, Void.class);
             log.info("Confirmation remboursement envoyée à G2 avec succès");
         } catch (Exception e) {
             log.error("Échec envoi confirmation remboursement vers G2: {}", e.getMessage());
@@ -74,7 +84,9 @@ public class SubscriptionCallbackService {
         log.info("Vérification abonnement actif pour userId: {}", userId);
 
         try {
-            return subscriptionClient.checkActiveSubscription(userId).getBody();
+            String url = subscriptionServiceUrl + "/abonnements/users/" + userId + "/actif";
+            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+            return response.getBody();
         } catch (Exception e) {
             log.error("Échec vérification abonnement actif: {}", e.getMessage());
             return null;

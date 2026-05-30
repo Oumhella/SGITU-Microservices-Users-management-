@@ -9,6 +9,32 @@ volumes:
 
 services:
 
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
+    container_name: zookeeper-payment
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - sgitu-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.0
+    container_name: kafka-payment
+    ports:
+      - "29093:29093"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - sgitu-network
+
   payment-db:
     image: mysql:8.0
     container_name: payment-db
@@ -76,6 +102,8 @@ services:
     depends_on:
       payment-db:
         condition: service_healthy
+      kafka:
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8086/health || exit 1"]
       interval: 30s

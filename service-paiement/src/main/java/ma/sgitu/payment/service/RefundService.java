@@ -32,6 +32,7 @@ public class RefundService {
     private final PaymentRepository paymentRepository;
     private final PaymentAccountRepository paymentAccountRepository;
     private final SubscriptionCallbackService subscriptionCallbackService;
+    private final TicketCallbackService ticketCallbackService;
 
     @Transactional
     public RefundResponse processRefund(Long paymentId, RefundRequest request) {
@@ -81,6 +82,8 @@ public class RefundService {
 
         if (payment.getSourceType() == SourceType.SUBSCRIPTION) {
             subscriptionCallbackService.sendRefundConfirmation(payment, refund);
+        } else if (payment.getSourceType() == SourceType.TICKET) {
+            ticketCallbackService.sendRefundConfirmation(payment, refund);
         }
 
         return toSuccessResponse(refund);

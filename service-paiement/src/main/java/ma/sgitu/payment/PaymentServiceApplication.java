@@ -2,7 +2,6 @@ package ma.sgitu.payment;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.openfeign.EnableFeignClients;
 
 /**
  * Application principale - Microservice G6 Paiement
@@ -12,16 +11,21 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
  * - Enregistrement des moyens de paiement (CARD, MOBILE_MONEY)
  * - Validation OTP via G5 Notifications
  * - Génération de factures
+ * - Gestion des remboursements (TICKET + SUBSCRIPTION)
  * - Simulation de paiement (test_cards, test_mobile_money_accounts)
  *
  * Intégrations :
- * - G1 Billetterie : sourceType=TICKET
- * - G2 Abonnements : sourceType=SUBSCRIPTION
- * - G5 Notifications : OpenFeign (EMAIL réel)
+ * - G1 Billetterie : sourceType=TICKET + remboursement
+ * - G2 Abonnements : sourceType=SUBSCRIPTION + callbacks
+ * - G5 Notifications : Kafka (payment.notification topic)
  * - G10 Gateway : routing + JWT
+ *
+ * Sécurité :
+ * - TLS/HTTPS (PKCS12 keystore)
+ * - JWT Authentication
+ * - BCrypt OTP hashing
  */
 @SpringBootApplication
-@EnableFeignClients // ✅ Active OpenFeign pour appeler G5
 public class PaymentServiceApplication {
 
     public static void main(String[] args) {

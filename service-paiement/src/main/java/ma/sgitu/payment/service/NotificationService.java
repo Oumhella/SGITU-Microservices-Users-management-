@@ -2,7 +2,7 @@ package ma.sgitu.payment.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import ma.sgitu.payment.client.NotificationClient;
+import ma.sgitu.payment.service.NotificationEventPublisher;
 import ma.sgitu.payment.dto.request.NotificationRequest;
 import ma.sgitu.payment.entity.Invoice;
 import ma.sgitu.payment.entity.Payment;
@@ -18,7 +18,7 @@ import java.util.UUID;
 @Slf4j
 public class NotificationService {
 
-    private final NotificationClient notificationClient;
+    private final NotificationEventPublisher notificationEventPublisher;
 
     public void sendOtpNotification(PaymentAccount paymentAccount, String otpCode, String userEmail) {
         log.info("Envoi notification OTP pour PaymentAccount ID: {}", paymentAccount.getId());
@@ -43,7 +43,7 @@ public class NotificationService {
                 .build();
 
         try {
-            notificationClient.sendNotification(request);
+            notificationEventPublisher.publishNotification(request);
             log.info("Notification OTP envoyée avec succès");
         } catch (Exception e) {
             log.warn("G5 indisponible — OTP généré localement uniquement");
@@ -74,7 +74,7 @@ public class NotificationService {
                 .build();
 
         try {
-            notificationClient.sendNotification(request);
+            notificationEventPublisher.publishNotification(request);
             log.info("Notification PAYMENT_SUCCESS envoyée pour paiement ID: {}", payment.getId());
         } catch (Exception e) {
             log.error("Échec notification PAYMENT_SUCCESS pour paiement ID {}: {}", payment.getId(), e.getMessage());
@@ -106,7 +106,7 @@ public class NotificationService {
                 .build();
 
         try {
-            notificationClient.sendNotification(request);
+            notificationEventPublisher.publishNotification(request);
             log.info("Notification PAYMENT_FAILED envoyée pour paiement ID: {}", payment.getId());
         } catch (Exception e) {
             log.error("Échec notification PAYMENT_FAILED pour paiement ID {}: {}", payment.getId(), e.getMessage());
@@ -136,7 +136,7 @@ public class NotificationService {
                 .build();
 
         try {
-            notificationClient.sendNotification(request);
+            notificationEventPublisher.publishNotification(request);
             log.info("Notification PAYMENT_CANCELLED envoyée pour paiement ID: {}", payment.getId());
         } catch (Exception e) {
             log.error("Échec notification PAYMENT_CANCELLED pour paiement ID {}: {}", payment.getId(), e.getMessage());
@@ -169,7 +169,7 @@ public class NotificationService {
                 .build();
 
         try {
-            notificationClient.sendNotification(request);
+            notificationEventPublisher.publishNotification(request);
             log.info("Notification INVOICE_GENERATED envoyée pour facture: {}", invoice.getInvoiceNumber());
         } catch (Exception e) {
             log.error("Échec notification INVOICE_GENERATED pour facture {}: {}", invoice.getInvoiceNumber(), e.getMessage());
