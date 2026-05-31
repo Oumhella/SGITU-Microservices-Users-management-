@@ -21,7 +21,7 @@ public class HeaderAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest req,
-                                    HttpServletResponse res, FilterChain chain)
+            HttpServletResponse res, FilterChain chain)
             throws ServletException, IOException {
 
         String userId = req.getHeader("X-User-Id");
@@ -34,16 +34,14 @@ public class HeaderAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        List<GrantedAuthority> authorities =
-                Arrays.stream(rolesHeader.split(","))
-                        .map(String::trim)
-                        .filter(role -> !role.isEmpty())
-                        .map(SimpleGrantedAuthority::new)
-                        .collect(Collectors.toList());
+        List<GrantedAuthority> authorities = Arrays.stream(rolesHeader.split(","))
+                .map(String::trim)
+                .filter(role -> !role.isEmpty())
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
 
-        UsernamePasswordAuthenticationToken auth =
-                new UsernamePasswordAuthenticationToken(
-                        userId, null, authorities);
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                userId, null, authorities);
 
         SecurityContextHolder.getContext().setAuthentication(auth);
         chain.doFilter(req, res);
