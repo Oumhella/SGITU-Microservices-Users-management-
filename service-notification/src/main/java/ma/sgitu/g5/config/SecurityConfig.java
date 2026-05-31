@@ -40,9 +40,8 @@ public class SecurityConfig {
                 // Endpoints d'administration (nécessitent ROLE_ADMIN)
                 .requestMatchers("/api/notifications/admin/**").hasRole("ADMIN")
                 
-                // Tout le reste : accepte les JWT de tous les groupes (G1-G10)
-                // Le filtre JWT valide les tokens mais n'échoue pas si absent (compatibilité)
-                .anyRequest().permitAll()
+                // Tout le reste : exige que l'utilisateur soit authentifié (JWT valide)
+                .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         

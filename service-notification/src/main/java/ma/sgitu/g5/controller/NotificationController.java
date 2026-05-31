@@ -39,10 +39,10 @@ public class NotificationController {
     @PostMapping("/send")
     @Operation(
             summary = "Envoyer une notification",
-            description = "Envoie une notification via EMAIL, SMS ou PUSH. Retourne immédiatement avec statut QUEUED, l'envoi est asynchrone."
+            description = "Envoie une notification via EMAIL, SMS, PUSH ou LOG (admin). Retourne immédiatement 202 QUEUED, l'envoi est asynchrone."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "202", description = "Notification acceptée et en cours de traitement"),
+            @ApiResponse(responseCode = "202", description = "Notification acceptée et en file d'attente (QUEUED) ou déjà traitée (ALREADY_QUEUED)"),
             @ApiResponse(responseCode = "400", description = "Canal non supporté ou destinataire manquant"),
             @ApiResponse(responseCode = "401", description = "JWT manquant ou invalide")
     })
@@ -129,7 +129,13 @@ public class NotificationController {
                 if (isBlank(dto.getRecipient().getDeviceToken()))
                     throw new IllegalArgumentException("recipient.deviceToken obligatoire pour PUSH");
             }
-            default -> throw new IllegalArgumentException("Canal non supporté : " + dto.getChannel());
+            case "LOG" -> {
+                // Canal LOG (admin) : pas de destinataire obligatoire
+                // userId peut être "system" ou un userId admin
+                log.info("[G5] Canal LOG — notification admin vers fichier log");
+            }
+            default -> throw new IllegalArgumentException("Canal non supporté : " + dto.getChannel()
+                    + ". Valeurs : EMAIL, SMS, PUSH, LOG");
         }
     }
 

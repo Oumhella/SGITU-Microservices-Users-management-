@@ -1,16 +1,18 @@
 package ma.sgitu.g5.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import ma.sgitu.g5.service.TracingService;
+import ma.sgitu.g5.service.ITracingService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -26,14 +28,25 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * JWTAuthenticationFilter - Filtre d'authentification JWT
- * Accepte les tokens JWT provenant de tous les groupes (G1-G10)
- * 
- * APPROCHE DE TRAÇABILITÉ:
- * 1. Accepte tous les tokens sans validation stricte de signature
- * 2. Extrait les informations de traçabilité (source group, userId, etc.)
- * 3. Envoie les infos à G10 pour validation asynchrone
- * 4. G3 (Users) reçoit un traitement spécial
+ * JWTAuthenticationFilter — Filtre d'authentification JWT multi-groupes.
+ *
+ * STRATÉGIE D'ACCEPTATION DES TOKENS (G1–G10) :
+ * ─────────────────────────────────────────────
+ * G5 (Notification) est un service transverse utilisé par tous les groupes.
+ * Les tokens sont émis par chaque groupe et signés avec le secret partagé
+ * fourni par G10 (Auth). G5 valide la signature avec ce secret commun.
+ *
+ * TRAÇABILITÉ VERS G10 :
+ * ─────────────────────
+ * Chaque requête authentifiée est tracée via Kafka (topic: token-validation)
+ * vers G10 pour audit asynchrone. G3 (Utilisateurs) bénéficie d'un tag prioritaire.
+ *
+ * COMPORTEMENT EN CAS D'ERREUR :
+ * ──────────────────────────────
+ * - Token absent       → 401 Unauthorized (sauf endpoints publics gérés par SecurityConfig)
+ * - Token expiré       → 401 Unauthorized avec message explicite
+ * - Signature invalide → 401 Unauthorized avec message explicite
+ * - Token mal formé    → 401 Unauthorized
  */
 @Slf4j
 @Component
@@ -43,89 +56,113 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
     @Value("${jwt.secret}")
     private String jwtSecret;
 
-    private final TracingService tracingService;
+    private final ITracingService tracingService;
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
-    private static final String BEARER_PREFIX = "Bearer ";
-    private static final String X_SOURCE_GROUP = "X-Source-Group";
-    private static final String X_TRACE_ID = "X-Trace-Id";
+    private static final String BEARER_PREFIX        = "Bearer ";
+    private static final String X_SOURCE_GROUP       = "X-Source-Group";
+    private static final String X_TRACE_ID           = "X-Trace-Id";
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
             throws ServletException, IOException {
 
-        String authHeader = request.getHeader(AUTHORIZATION_HEADER);
+        String authHeader  = request.getHeader(AUTHORIZATION_HEADER);
         String sourceGroup = request.getHeader(X_SOURCE_GROUP);
-        String traceId = request.getHeader(X_TRACE_ID);
+        String traceId     = request.getHeader(X_TRACE_ID);
 
-        // Générer un trace ID si non fourni
         if (traceId == null) {
             traceId = UUID.randomUUID().toString();
         }
 
+        // ── 1. Token absent ──────────────────────────────────────────────────
         if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
-            // Pas de token JWT, on continue sans authentification
-            log.warn("[JWT-TRACE] Trace ID: {} - Pas de token JWT fourni", traceId);
-            filterChain.doFilter(request, response);
+            log.warn("[JWT] TraceId={} | Token JWT absent — 401 retourné", traceId);
+            sendUnauthorized(response, "Token JWT manquant. Fournissez un header Authorization: Bearer <token>");
             return;
         }
 
         String token = authHeader.substring(BEARER_PREFIX.length());
-        String userId = null;
+        String userId            = null;
         String tokenSourceService = null;
-        List<String> roles = null;
-        boolean tokenValid = false;
+        List<String> roles       = null;
+        boolean tokenValid       = false;
 
         try {
-            // Tentative de parsing du token (sans validation stricte de signature)
+            // ── 2. Validation signature + parsing ────────────────────────────
+            // La clé secrète est celle fournie par G10 (shared secret).
+            // Tous les groupes (G1-G10) signent leurs tokens avec cette même clé.
             Claims claims = Jwts.parserBuilder()
                     .setSigningKey(Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8)))
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
 
-            userId = claims.getSubject();
+            userId             = claims.getSubject();
             tokenSourceService = claims.get("sourceService", String.class);
-            roles = claims.get("roles", List.class);
-            tokenValid = true;
+            roles              = claims.get("roles", List.class);
+            tokenValid         = true;
 
-            log.info("[JWT-TRACE] Trace ID: {} - Token parsé avec succès - User: {}, Token Source: {}, Header Source: {}", 
+            log.info("[JWT] TraceId={} | Token valide | User={} | Source={} | Groupe={}",
                     traceId, userId, tokenSourceService, sourceGroup);
 
-        } catch (MalformedJwtException e) {
-            // Token mal formé mais on continue pour traçabilité
-            log.warn("[JWT-TRACE] Trace ID: {} - Token mal formé: {}", traceId, e.getMessage());
-        } catch (Exception e) {
-            // Autre erreur mais on continue pour traçabilité
-            log.warn("[JWT-TRACE] Trace ID: {} - Erreur parsing token: {}", traceId, e.getMessage());
+        } catch (ExpiredJwtException ex) {
+            log.warn("[JWT] TraceId={} | Token expiré : {}", traceId, ex.getMessage());
+            sendUnauthorized(response, "Token JWT expiré. Veuillez vous ré-authentifier.");
+            return;
+
+        } catch (SignatureException ex) {
+            log.warn("[JWT] TraceId={} | Signature JWT invalide (token d'un groupe non reconnu) : {}",
+                    traceId, ex.getMessage());
+            sendUnauthorized(response, "Signature JWT invalide. Token non reconnu par G5.");
+            return;
+
+        } catch (MalformedJwtException ex) {
+            log.warn("[JWT] TraceId={} | Token JWT mal formé : {}", traceId, ex.getMessage());
+            sendUnauthorized(response, "Token JWT mal formé.");
+            return;
+
+        } catch (Exception ex) {
+            log.warn("[JWT] TraceId={} | Erreur d'authentification : {}", traceId, ex.getMessage());
+            sendUnauthorized(response, "Erreur d'authentification JWT.");
+            return;
         }
 
-        // Traitement spécial pour G3 (Users)
-        if (sourceGroup != null && sourceGroup.equals("G3")) {
-            log.info("[JWT-TRACE] Trace ID: {} - Traitement spécial pour G3 (Users) - User: {}", traceId, userId);
+        // ── 3. Traitement spécial G3 (Utilisateurs) ─────────────────────────
+        if ("G3".equals(sourceGroup)) {
+            log.info("[JWT] TraceId={} | [G3-PRIORITAIRE] Requête du groupe Utilisateurs | User={}",
+                    traceId, userId);
         }
 
-        // Envoyer les infos de traçabilité à G10 pour validation asynchrone
-        tracingService.sendTracingInfo(traceId, token, sourceGroup, tokenSourceService, userId, roles, tokenValid);
+        // ── 4. Traçabilité asynchrone vers G10 via Kafka ─────────────────────
+        tracingService.sendTracingInfo(traceId, token, sourceGroup,
+                tokenSourceService, userId, roles, tokenValid);
 
-        // Créer l'authentification basique (sans validation stricte)
-        if (userId != null) {
-            List<SimpleGrantedAuthority> authorities = roles != null
-                    ? roles.stream().map(SimpleGrantedAuthority::new).toList()
-                    : Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+        // ── 5. Authentification Spring Security ──────────────────────────────
+        List<SimpleGrantedAuthority> authorities = (roles != null && !roles.isEmpty())
+                ? roles.stream().map(SimpleGrantedAuthority::new).toList()
+                : Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
 
-            Authentication authentication = new UsernamePasswordAuthenticationToken(
-                    userId,
-                    null,
-                    authorities
-            );
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                userId, null, authorities);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-        }
-
-        // Ajouter le trace ID aux headers pour traçabilité downstream
+        // ── 6. Propagation du Trace ID en réponse ────────────────────────────
         response.setHeader(X_TRACE_ID, traceId);
 
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Envoie une réponse HTTP 401 avec un message JSON structuré.
+     */
+    private void sendUnauthorized(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(
+                "{\"error\":\"Unauthorized\",\"message\":\"" + message + "\"}"
+        );
     }
 }

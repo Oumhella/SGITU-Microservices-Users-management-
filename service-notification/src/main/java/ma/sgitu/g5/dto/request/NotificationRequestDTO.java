@@ -25,7 +25,7 @@ public class NotificationRequestDTO {
     private String eventType;
 
     @NotBlank(message = "channel est obligatoire")
-    @Pattern(regexp = "EMAIL|SMS|PUSH", message = "Canal doit être EMAIL, SMS ou PUSH")
+    @Pattern(regexp = "EMAIL|SMS|PUSH|LOG", message = "Canal doit être EMAIL, SMS, PUSH ou LOG")
     @Schema(example = "EMAIL", requiredMode = Schema.RequiredMode.REQUIRED)
     private String channel;
 

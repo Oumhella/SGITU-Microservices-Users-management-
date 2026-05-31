@@ -7,7 +7,6 @@ import ma.sgitu.g5.dto.response.NotificationResponseDTO;
 import ma.sgitu.g5.dto.response.SendResultDTO;
 import ma.sgitu.g5.entity.Notification;
 import ma.sgitu.g5.entity.NotificationStatus;
-import ma.sgitu.g5.entity.NotificationType;
 import ma.sgitu.g5.mapper.NotificationMapper;
 import ma.sgitu.g5.repository.NotificationRepository;
 import ma.sgitu.g5.repository.specification.NotificationSpecification;
@@ -32,6 +31,9 @@ public class NotificationServiceImpl implements INotificationService {
     private final IRetryService retryService;
     private final NotificationMapper notificationMapper;
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // SEND — Point d'entrée principal
+    // ─────────────────────────────────────────────────────────────────────────
     @Override
     @Transactional
     public NotificationResponseDTO send(NotificationRequestDTO dto) {
@@ -40,24 +42,29 @@ public class NotificationServiceImpl implements INotificationService {
             notificationId = UUID.randomUUID().toString();
         }
 
-        // Normalisation sourceService — garantit unicité même si un groupe envoie "payment" au lieu de "PAYMENT"
+        // Normalisation sourceService (évite les collisions G1 vs g1 vs G1_BILLETTERIE)
         String sourceService = (dto.getSourceService() != null)
                 ? dto.getSourceService().toUpperCase().trim()
                 : "UNKNOWN";
         dto.setSourceService(sourceService);
 
-        // Déduplication composite : (sourceService + notificationId) = clé unique globale
-        // Deux groupes différents avec le même UUID ne génèrent PAS de collision
-        if (notificationRepository.existsBySourceServiceAndNotificationId(sourceService, notificationId)) {
-            log.warn("[G5] Doublon détecté (id={}  source={}) — ignoré (idempotence)", notificationId, sourceService);
-            return buildResponse(notificationId, "ALREADY_QUEUED",
-                    "Notification déjà prise en charge", dto.getChannel());
+        // ── IDEMPOTENCE : clé composite (sourceService + notificationId) ──────
+        // Si la notification a déjà été prise en charge, on retourne ses données
+        // originales dans le corps de la réponse 202 (exigence prof).
+        final String finalNotifId = notificationId;
+        java.util.Optional<Notification> existing =
+                notificationRepository.findBySourceServiceAndNotificationId(sourceService, finalNotifId);
+
+        if (existing.isPresent()) {
+            Notification original = existing.get();
+            log.warn("[G5] Doublon détecté (id={}  source={}) — ALREADY_QUEUED", notificationId, sourceService);
+            return buildAlreadyQueuedResponse(original);
         }
 
         String message = templateService.hydrateMessage(dto.getEventType(), dto.getMetadata());
-        String subject = templateService.hydrateSubject(dto.getEventType(), dto.getMetadata());
+        String subject  = templateService.hydrateSubject(dto.getEventType(), dto.getMetadata());
 
-        // ── MapStruct : conversion automatique DTO → Entité ──────────────
+        // ── MapStruct : conversion automatique DTO → Entité ──────────────────
         Notification entity = notificationMapper.toEntity(dto);
         entity.setNotificationId(notificationId);
         entity.setSubject(subject);
@@ -67,9 +74,12 @@ public class NotificationServiceImpl implements INotificationService {
         dispatchAsync(entity, dto, subject, message);
 
         log.info("[G5] Notification QUEUED : {} | channel={}", notificationId, dto.getChannel());
-        return buildResponse(notificationId, "QUEUED", "Notification prise en charge", dto.getChannel());
+        return buildQueuedResponse(entity);
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // LIST — Recherche paginée avec filtres dynamiques
+    // ─────────────────────────────────────────────────────────────────────────
     @Override
     @Transactional(readOnly = true)
     public Page<Notification> list(String userId, String status, String sourceService, Pageable pageable) {
@@ -82,10 +92,14 @@ public class NotificationServiceImpl implements INotificationService {
                         "Statut invalide : " + status + ". Valeurs acceptées : PENDING, SENT, FAILED");
             }
         }
-        Specification<Notification> spec = NotificationSpecification.withFilters(userId, enumStatus, sourceService);
+        Specification<Notification> spec =
+                NotificationSpecification.withFilters(userId, enumStatus, sourceService, null, null, null);
         return notificationRepository.findAll(spec, pageable);
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // RETRY — Relance manuelle d'une notification FAILED
+    // ─────────────────────────────────────────────────────────────────────────
     @Override
     @Transactional
     public NotificationResponseDTO retry(String notificationId) {
@@ -93,7 +107,7 @@ public class NotificationServiceImpl implements INotificationService {
                 .orElseThrow(() -> new IllegalArgumentException("Notification introuvable : " + notificationId));
 
         if (entity.getStatus() != NotificationStatus.FAILED) {
-            return buildResponse(notificationId, entity.getStatus().name(),
+            return buildSimpleResponse(notificationId, entity.getStatus().name(),
                     "Retry non applicable sur ce statut", entity.getChannel());
         }
 
@@ -102,11 +116,14 @@ public class NotificationServiceImpl implements INotificationService {
         notificationRepository.save(entity);
 
         dispatchAsyncFromEntity(entity);
-        return buildResponse(notificationId, "QUEUED", "Relance en cours", entity.getChannel());
+        return buildSimpleResponse(notificationId, "QUEUED", "Relance en cours", entity.getChannel());
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // DISPATCH — Envoi asynchrone
+    // ─────────────────────────────────────────────────────────────────────────
     @Async
-    protected void dispatchAsync(Notification entity, NotificationRequestDTO dto, String subject, String message) {
+    public void dispatchAsync(Notification entity, NotificationRequestDTO dto, String subject, String message) {
         try {
             SendResultDTO result = channelRouter.route(dto, subject, message);
             updateStatus(entity, result);
@@ -116,7 +133,7 @@ public class NotificationServiceImpl implements INotificationService {
     }
 
     @Async
-    protected void dispatchAsyncFromEntity(Notification entity) {
+    public void dispatchAsyncFromEntity(Notification entity) {
         try {
             NotificationRequestDTO dto = rebuildDtoFromEntity(entity);
             SendResultDTO result = channelRouter.route(dto, entity.getSubject(), entity.getContent());
@@ -126,8 +143,11 @@ public class NotificationServiceImpl implements INotificationService {
         }
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // HELPERS
+    // ─────────────────────────────────────────────────────────────────────────
     @Transactional
-    protected void updateStatus(Notification entity, SendResultDTO result) {
+    public void updateStatus(Notification entity, SendResultDTO result) {
         if (result.isSuccess()) {
             entity.setStatus(NotificationStatus.SENT);
             entity.setSentAt(LocalDateTime.now());
@@ -139,17 +159,20 @@ public class NotificationServiceImpl implements INotificationService {
     }
 
     @Transactional
-    protected void handleFailure(Notification entity, String errorReason) {
+    public void handleFailure(Notification entity, String errorReason) {
         if (retryService.shouldRetry(entity.getRetryCount())) {
             int delay = retryService.nextDelaySeconds(entity.getRetryCount());
             entity.setStatus(NotificationStatus.PENDING);
             entity.setRetryCount(entity.getRetryCount() + 1);
+            notificationRepository.save(entity);
+            // Relance différée via TaskScheduler (backoff exponentiel)
             retryService.scheduleRetry(entity.getNotificationId(), delay);
         } else {
             entity.setStatus(NotificationStatus.FAILED);
-            log.error("[G5] Notification FAILED : {} | Raison : {}", entity.getNotificationId(), errorReason);
+            notificationRepository.save(entity);
+            log.error("[G5] Notification FAILED définitivement : {} | Raison : {}",
+                    entity.getNotificationId(), errorReason);
         }
-        notificationRepository.save(entity);
     }
 
     private NotificationRequestDTO rebuildDtoFromEntity(Notification entity) {
@@ -168,8 +191,37 @@ public class NotificationServiceImpl implements INotificationService {
         return dto;
     }
 
-    private NotificationResponseDTO buildResponse(String id, String status, String msg, String ch) {
-        // ── MapStruct : on réutilise toResponseDTO pour les cas simples ──────
+    /**
+     * Réponse pour le cas ALREADY_QUEUED — contient les données de la notification originale.
+     * Requis par la remarque du prof : "le corps doit contenir l'identifiant de la notif originale".
+     */
+    private NotificationResponseDTO buildAlreadyQueuedResponse(Notification original) {
+        NotificationResponseDTO r = new NotificationResponseDTO();
+        r.setNotificationId(original.getNotificationId());
+        r.setStatus("ALREADY_QUEUED");
+        r.setMessage("Notification déjà prise en charge — données originales retournées");
+        r.setChannel(original.getChannel());
+        r.setQueuedAt(original.getCreatedAt() != null ? original.getCreatedAt().toString() : null);
+        // ── Données originales (idempotence enrichie) ────────────────────────
+        r.setOriginalCreatedAt(original.getCreatedAt() != null ? original.getCreatedAt().toString() : null);
+        r.setCurrentStatus(original.getStatus() != null ? original.getStatus().name() : null);
+        r.setOriginalSourceService(original.getSourceService());
+        return r;
+    }
+
+    /** Réponse pour une nouvelle notification acceptée (QUEUED). */
+    private NotificationResponseDTO buildQueuedResponse(Notification entity) {
+        NotificationResponseDTO r = new NotificationResponseDTO();
+        r.setNotificationId(entity.getNotificationId());
+        r.setStatus("QUEUED");
+        r.setMessage("Notification prise en charge");
+        r.setChannel(entity.getChannel());
+        r.setQueuedAt(LocalDateTime.now().toString());
+        return r;
+    }
+
+    /** Réponse simple (retry, statut non-FAILED, etc.). */
+    private NotificationResponseDTO buildSimpleResponse(String id, String status, String msg, String ch) {
         NotificationResponseDTO r = new NotificationResponseDTO();
         r.setNotificationId(id);
         r.setStatus(status);
