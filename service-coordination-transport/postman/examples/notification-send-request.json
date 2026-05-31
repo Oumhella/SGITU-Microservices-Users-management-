@@ -1,7 +1,7 @@
 {
 	"canal": "MOBILE_PUSH",
 	"sujet": "Retard confirmé — L12",
-	"corps": "Le véhicule VH-001 accuse environ 12 minutes de retard sur le trajet T12-A.",
+	"corps": "Le véhicule 00000000-0000-4000-8000-000000000001 accuse environ 12 minutes de retard sur le trajet T12-A.",
 	"metadata": {
 		"missionId": "42",
 		"ligneCode": "L12",

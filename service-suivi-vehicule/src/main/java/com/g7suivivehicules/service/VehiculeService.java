@@ -5,6 +5,7 @@ import com.g7suivivehicules.dto.VehiculeResponse;
 import com.g7suivivehicules.entity.Vehicule;
 import com.g7suivivehicules.exception.VehiculeNotFoundException;
 import jakarta.persistence.EntityNotFoundException;
+import com.g7suivivehicules.kafka.KafkaProducerService;
 import com.g7suivivehicules.repository.VehiculeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 public class VehiculeService {
 
     private final VehiculeRepository vehiculeRepository;
+    private final KafkaProducerService kafkaProducerService;
 
     @Transactional
     public VehiculeResponse createVehicule(VehiculeRequest request) {
@@ -29,12 +31,13 @@ public class VehiculeService {
         Vehicule vehicule = Vehicule.builder()
                 .immatriculation(request.getImmatriculation())
                 .type(request.getType())
-                .ligne(request.getLigne())
-                .statut(Vehicule.StatutVehicule.DISPONIBLE) // Initialement disponible
+                .ligne(null)
+                .statut(Vehicule.StatutVehicule.DISPONIBLE)
                 .conducteurId(request.getConducteurId())
                 .build();
 
         Vehicule saved = vehiculeRepository.save(vehicule);
+        kafkaProducerService.publierVehicleRegistered(saved);
 
         return mapToResponse(saved);
     }

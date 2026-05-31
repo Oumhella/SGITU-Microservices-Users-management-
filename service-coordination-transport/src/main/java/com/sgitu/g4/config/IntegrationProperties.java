@@ -22,6 +22,12 @@ public class IntegrationProperties {
 	private String g1BaseUrl = "http://localhost:8081";
 	private String g5BaseUrl = "http://localhost:8085";
 	private String g7BaseUrl = "http://localhost:8087";
+	/** Flow G7 : vehicle.registered → affectation ligne → EN_SERVICE → mission. */
+	private boolean g7FlowEnabled = true;
+	private boolean g7FlowStrict = false;
+	/** Si référentiel vide, tente GET G7 avant de refuser (mode non strict). */
+	private boolean g7SyncOnDemandEnabled = true;
+	private String g7VehiculesPath = "/api/suivi-vehicules/vehicules";
 	private String g9BaseUrl = "http://localhost:8089";
 	private String g10GatewayUrl = "http://localhost:8080";
 	private int connectTimeoutMs = 3000;

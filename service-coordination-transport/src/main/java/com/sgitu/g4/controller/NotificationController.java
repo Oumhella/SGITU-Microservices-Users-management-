@@ -37,7 +37,7 @@ public class NotificationController {
 			{
 			  "canal": "MOBILE_PUSH",
 			  "sujet": "Retard confirmé — L12",
-			  "corps": "Le véhicule VH-001 accuse 12 minutes de retard.",
+			  "corps": "Le véhicule 00000000-0000-4000-8000-000000000001 accuse 12 minutes de retard.",
 			  "metadata": {"missionId": "1", "ligneCode": "L12", "source": "G4"}
 			}
 			""")))

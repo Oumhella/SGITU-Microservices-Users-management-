@@ -59,6 +59,10 @@ sgitu:
     g1-base-url: ${SGITU_G1_URL:http://localhost:8081}
     g5-base-url: ${SGITU_G5_URL:http://localhost:8085}
     g7-base-url: ${SGITU_G7_URL:http://localhost:8087}
+    g7-flow-enabled: ${SGITU_G7_FLOW_ENABLED:true}
+    g7-flow-strict: ${SGITU_G7_FLOW_STRICT:false}
+    g7-sync-on-demand-enabled: ${SGITU_G7_SYNC_ON_DEMAND:true}
+    g7-vehicules-path: ${SGITU_G7_VEHICULES_PATH:/api/suivi-vehicules/vehicules}
     g9-base-url: ${SGITU_G9_URL:http://localhost:8089}
     g10-gateway-url: ${SGITU_G10_URL:http://localhost:8080}
     connect-timeout-ms: 3000
@@ -72,7 +76,9 @@ sgitu:
     g9-consumer-group-id: ${SGITU_G9_CONSUMER_GROUP:g4-coordination-g9}
     topic-mission-lifecycle: ${SGITU_G1_MISSION_TOPIC:${SGITU_G3_MISSION_TOPIC:missions-lifecycle}}
     topic-vehicule-positions: ${SGITU_G7_POSITIONS_TOPIC:vehicule-positions}
+    topic-vehicle-registered: ${SGITU_G7_VEHICLE_REGISTERED_TOPIC:vehicle.registered}
     g7-consumer-group-id: ${SGITU_G7_CONSUMER_GROUP:g4-coordination-g7}
+    g7-registered-consumer-group-id: ${SGITU_G7_REGISTERED_CONSUMER_GROUP:g4-coordination-g7-registered}
 
 resilience4j:
   circuitbreaker:

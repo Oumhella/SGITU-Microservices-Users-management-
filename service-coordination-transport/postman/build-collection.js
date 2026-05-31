@@ -1,5 +1,8 @@
 const fs = require('fs');
 
+/** UUID exemple aligné G7 — remplacer par un id réel après POST /api/suivi-vehicules/vehicules (G7). */
+const EXAMPLE_VEHICLE_UUID = '00000000-0000-4000-8000-000000000001';
+
 const saveId = (v) => ({
 	listen: 'test',
 	script: {
@@ -52,6 +55,7 @@ const collection = {
 			'2) Attendre health UP : GET 00 — Démarrage\n' +
 			'3) Parcours rapide : dossier GUIDE (requêtes 1→13 dans l\'ordre)\n' +
 			'4) Login : gestionnaire.reseau = réseau | gestionnaire.flotte = missions | admin.technique = admin\n\n' +
+			'Flow G7 : créer véhicule chez G7 → variable vehiculeId (UUID) → sync ou Kafka → affectation ACTIF → mission.\n\n' +
 			'Les POST « créer » enregistrent automatiquement ligneId, arretId, missionId…',
 		schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
 	},
@@ -67,7 +71,8 @@ const collection = {
 		{ key: 'missionId', value: '1' },
 		{ key: 'eventId', value: '1' },
 		{ key: 'impactId', value: '1' },
-		{ key: 'vehiculeId', value: 'VH-001' },
+		{ key: 'vehiculeId', value: EXAMPLE_VEHICLE_UUID },
+		{ key: 'g7BaseUrl', value: 'http://localhost:8087' },
 		{ key: 'g3BaseUrl', value: 'http://localhost:8083' },
 		{ key: 'g3AccessToken', value: '' },
 	],
@@ -156,6 +161,12 @@ const guide = [
 		}),
 		event: [saveId('horaireId')],
 	},
+	{
+		...req('6b. POST sync véhicule G7 → G4', 'POST', '{{baseUrl}}/api/g4/vehicules/sync-from-g7/{{vehiculeId}}', {
+			desc: 'Après création véhicule chez G7 : copier son UUID dans la variable vehiculeId. Ou attendre Kafka vehicle.registered.',
+		}),
+	},
+	req('6c. GET véhicules disponibles G4', 'GET', '{{baseUrl}}/api/g4/vehicules/disponibles'),
 	{
 		...req('7. POST affectation', 'POST', '{{baseUrl}}/api/g4/affectations', {
 			body:
@@ -272,7 +283,20 @@ collection.item.push(
 );
 
 collection.item.push(
-	folder('06 — Affectations', 'Login gestionnaire.flotte', [
+	folder('05b — Référentiel véhicules G7', 'UUID G7 obligatoire — avant affectation', [
+		req('GET véhicules disponibles', 'GET', '{{baseUrl}}/api/g4/vehicules/disponibles', {
+			desc: 'Véhicules DISPONIBLE (Kafka vehicle.registered ou sync)',
+		}),
+		req('GET tous véhicules référentiel', 'GET', '{{baseUrl}}/api/g4/vehicules'),
+		req('GET véhicule par id', 'GET', '{{baseUrl}}/api/g4/vehicules/{{vehiculeId}}'),
+		req('POST sync depuis G7', 'POST', '{{baseUrl}}/api/g4/vehicules/sync-from-g7/{{vehiculeId}}', {
+			desc: 'Secours si Kafka indisponible — G7 doit être UP sur g7BaseUrl',
+		}),
+	])
+);
+
+collection.item.push(
+	folder('06 — Affectations', 'Login gestionnaire.flotte — après véhicule DISPONIBLE', [
 		{
 			...req('POST créer affectation', 'POST', '{{baseUrl}}/api/g4/affectations', {
 				body:

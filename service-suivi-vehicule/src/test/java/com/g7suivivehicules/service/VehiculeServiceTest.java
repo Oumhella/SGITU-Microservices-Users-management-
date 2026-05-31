@@ -4,6 +4,7 @@ import com.g7suivivehicules.dto.VehiculeRequest;
 import com.g7suivivehicules.dto.VehiculeResponse;
 import com.g7suivivehicules.entity.Vehicule;
 import com.g7suivivehicules.exception.VehiculeNotFoundException;
+import com.g7suivivehicules.kafka.KafkaProducerService;
 import com.g7suivivehicules.repository.VehiculeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,9 @@ class VehiculeServiceTest {
 
     @Mock
     private VehiculeRepository vehiculeRepository;
+
+    @Mock
+    private KafkaProducerService kafkaProducerService;
 
     @InjectMocks
     private VehiculeService vehiculeService;

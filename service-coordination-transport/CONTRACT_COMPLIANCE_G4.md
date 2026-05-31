@@ -42,7 +42,11 @@ Le code utilise **G1** pour la billetterie côté Kafka (`G1BilletterieClient`, 
 | Arrêts | `PUT /api/g4/arrets/{arretId}` | `ArretController` | Conforme |
 | Arrêts | `DELETE /api/g4/arrets/{arretId}` | `ArretController` | Conforme |
 | Arrêts | `GET /api/g4/arrets/ligne/{ligneId}` | `ArretController` | Conforme |
-| Affectations | `POST /api/g4/affectations` | `AffectationController` | Conforme |
+| Véhicules G7 | `GET /api/g4/vehicules` | `VehiculeReferentielController` | Conforme |
+| Véhicules G7 | `GET /api/g4/vehicules/disponibles` | `VehiculeReferentielController` | Conforme |
+| Véhicules G7 | `GET /api/g4/vehicules/{vehiculeId}` | `VehiculeReferentielController` | Conforme |
+| Véhicules G7 | `POST /api/g4/vehicules/sync-from-g7/{vehiculeId}` | `VehiculeReferentielController` | Conforme |
+| Affectations | `POST /api/g4/affectations` | `AffectationController` | Conforme (flow G7 + PUT EN_SERVICE) |
 | Affectations | `GET /api/g4/affectations` | `AffectationController` | Conforme |
 | Affectations | `GET /api/g4/affectations/{affectationId}` | `AffectationController` | Conforme |
 | Affectations | `GET /api/g4/affectations/vehicule/{vehiculeId}` | `AffectationController` | Conforme |

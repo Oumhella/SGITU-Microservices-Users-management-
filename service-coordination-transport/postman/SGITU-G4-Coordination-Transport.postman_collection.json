@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "g4-coord-2026-ordered",
 		"name": "SGITU G4 — Tests ordonnés",
-		"description": "ORDRE IMPORTANT\n\n1) Démarrer G4 : cd service-coordination-transport puis docker compose up -d\n2) Attendre health UP : GET 00 — Démarrage\n3) Parcours rapide : dossier GUIDE (requêtes 1→13 dans l'ordre)\n4) Login : gestionnaire.reseau = réseau | gestionnaire.flotte = missions | admin.technique = admin\n\nLes POST « créer » enregistrent automatiquement ligneId, arretId, missionId…",
+		"description": "ORDRE IMPORTANT\n\n1) Démarrer G4 : cd service-coordination-transport puis docker compose up -d\n2) Attendre health UP : GET 00 — Démarrage\n3) Parcours rapide : dossier GUIDE (requêtes 1→13 dans l'ordre)\n4) Login : gestionnaire.reseau = réseau | gestionnaire.flotte = missions | admin.technique = admin\n\nFlow G7 : créer véhicule chez G7 → variable vehiculeId (UUID) → sync ou Kafka → affectation ACTIF → mission.\n\nLes POST « créer » enregistrent automatiquement ligneId, arretId, missionId…",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
@@ -52,7 +52,11 @@
 		},
 		{
 			"key": "vehiculeId",
-			"value": "VH-001"
+			"value": "00000000-0000-4000-8000-000000000001"
+		},
+		{
+			"key": "g7BaseUrl",
+			"value": "http://localhost:8087"
 		},
 		{
 			"key": "g3BaseUrl",
@@ -396,6 +400,33 @@
 							}
 						}
 					]
+				},
+				{
+					"name": "6b. POST sync véhicule G7 → G4",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{baseUrl}}/api/g4/vehicules/sync-from-g7/{{vehiculeId}}",
+						"description": "Après création véhicule chez G7 : copier son UUID dans la variable vehiculeId. Ou attendre Kafka vehicle.registered."
+					}
+				},
+				{
+					"name": "6c. GET véhicules disponibles G4",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{baseUrl}}/api/g4/vehicules/disponibles"
+					}
 				},
 				{
 					"name": "7. POST affectation",
@@ -936,8 +967,68 @@
 			]
 		},
 		{
+			"name": "05b — Référentiel véhicules G7",
+			"description": "UUID G7 obligatoire — avant affectation",
+			"item": [
+				{
+					"name": "GET véhicules disponibles",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{baseUrl}}/api/g4/vehicules/disponibles",
+						"description": "Véhicules DISPONIBLE (Kafka vehicle.registered ou sync)"
+					}
+				},
+				{
+					"name": "GET tous véhicules référentiel",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{baseUrl}}/api/g4/vehicules"
+					}
+				},
+				{
+					"name": "GET véhicule par id",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{baseUrl}}/api/g4/vehicules/{{vehiculeId}}"
+					}
+				},
+				{
+					"name": "POST sync depuis G7",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{baseUrl}}/api/g4/vehicules/sync-from-g7/{{vehiculeId}}",
+						"description": "Secours si Kafka indisponible — G7 doit être UP sur g7BaseUrl"
+					}
+				}
+			]
+		},
+		{
 			"name": "06 — Affectations",
-			"description": "Login gestionnaire.flotte",
+			"description": "Login gestionnaire.flotte — après véhicule DISPONIBLE",
 			"item": [
 				{
 					"name": "POST créer affectation",

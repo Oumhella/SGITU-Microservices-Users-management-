@@ -45,18 +45,21 @@ public class MissionService {
 	private final G1BilletterieClient g1BilletterieClient;
 	private final G7VehicleClient g7VehicleClient;
 	private final G3UserClient g3UserClient;
+	private final VehiculeReferentielService vehiculeReferentielService;
 	private final SupervisionLogService supervisionLogService;
 
 	@Transactional
 	public MissionResponse create(MissionRequest request) {
-		assertVehicleAvailableForActiveMission(request.getVehiculeId().trim(), null, request.getStatut());
+		String vehiculeId = VehiculeReferentielService.normalizeVehiculeId(request.getVehiculeId());
+		assertVehicleAvailableForActiveMission(vehiculeId, null, request.getStatut());
+		vehiculeReferentielService.assertReadyForMission(vehiculeId, request.getLigneId());
 		g3UserClient.assertDriverExistsIfEnabled(request.getChauffeurId());
 		Ligne ligne = ligneRepository.findById(request.getLigneId())
 				.orElseThrow(() -> new ResourceNotFoundException("Ligne introuvable : " + request.getLigneId()));
 		Trajet trajet = resolveTrajet(request.getTrajetId(), ligne);
 		AffectationVehiculeLigne affectation = resolveAffectation(request.getAffectationId(), ligne);
 		Mission mission = Mission.builder()
-				.vehiculeId(request.getVehiculeId().trim())
+				.vehiculeId(vehiculeId)
 				.chauffeurId(trimToNull(request.getChauffeurId()))
 				.ligne(ligne)
 				.trajet(trajet)
@@ -93,8 +96,10 @@ public class MissionService {
 	public MissionStatusResponse status(Long id) {
 		Mission mission = missionRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Mission introuvable : " + id));
-		g7VehicleClient.fetchStatus(mission.getVehiculeId());
-		return EntityMapper.toStatus(mission);
+		Map<String, Object> vehiculeStatut = g7VehicleClient.fetchStatus(mission.getVehiculeId());
+		MissionStatusResponse response = EntityMapper.toStatus(mission);
+		response.setVehiculeStatutG7(vehiculeStatut);
+		return response;
 	}
 
 	@Transactional
@@ -104,11 +109,13 @@ public class MissionService {
 			throw new ForbiddenOperationException("Mission terminée ou annulée");
 		}
 		StatutMission oldStatus = mission.getStatut();
-		assertVehicleAvailableForActiveMission(request.getVehiculeId().trim(), id, request.getStatut());
+		String vehiculeId = VehiculeReferentielService.normalizeVehiculeId(request.getVehiculeId());
+		assertVehicleAvailableForActiveMission(vehiculeId, id, request.getStatut());
+		vehiculeReferentielService.assertReadyForMission(vehiculeId, request.getLigneId());
 		g3UserClient.assertDriverExistsIfEnabled(request.getChauffeurId());
 		Ligne ligne = ligneRepository.findById(request.getLigneId())
 				.orElseThrow(() -> new ResourceNotFoundException("Ligne introuvable : " + request.getLigneId()));
-		mission.setVehiculeId(request.getVehiculeId().trim());
+		mission.setVehiculeId(vehiculeId);
 		mission.setChauffeurId(trimToNull(request.getChauffeurId()));
 		mission.setLigne(ligne);
 		mission.setTrajet(resolveTrajet(request.getTrajetId(), ligne));
