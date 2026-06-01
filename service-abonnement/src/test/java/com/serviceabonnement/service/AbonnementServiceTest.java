@@ -106,7 +106,6 @@ class AbonnementServiceTest {
         callback.setStatus("SUCCESS");
 
         when(abonnementRepository.findByPaiementId("TRX-001")).thenReturn(Optional.of(sampleAbonnement));
-        when(abonnementRepository.findByUserId(42L)).thenReturn(java.util.List.of());
         when(abonnementRepository.findByUserIdAndStatut(any(), any())).thenReturn(java.util.List.of());
 
         // Act
