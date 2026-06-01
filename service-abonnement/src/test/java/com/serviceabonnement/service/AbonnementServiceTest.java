@@ -24,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -69,6 +70,9 @@ class AbonnementServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Injection manuelle de 'self' pour permettre le fonctionnement des appels @Transactional internes mockés
+        ReflectionTestUtils.setField(abonnementService, "self", abonnementService);
+
         samplePlan = new PlanAbonnement();
         samplePlan.setIdPlan(10L);
         samplePlan.setNomPlan("Forfait Mensuel Étudiant");
