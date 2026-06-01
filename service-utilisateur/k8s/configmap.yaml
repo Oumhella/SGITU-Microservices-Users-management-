@@ -26,6 +26,7 @@ data:
   
   # Kafka
   KAFKA_BOOTSTRAP_SERVERS: "kafka-service:9092"
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka-service:9092"
   EVENTS_USER_STATUS_TOPIC: "g8-user-events"
   
   # JWT
