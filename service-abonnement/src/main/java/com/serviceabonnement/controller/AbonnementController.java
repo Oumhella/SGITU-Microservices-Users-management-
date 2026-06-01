@@ -59,6 +59,7 @@ public class AbonnementController {
                 email = null;
             }
         }
+        
         return new ResponseEntity<>(abonnementService.souscrire(userId, planId, email), HttpStatus.CREATED);
     }
 
