@@ -220,6 +220,7 @@ services:
       - DB_USERNAME=root
       - DB_PASSWORD=
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - JWT_SECRET=${JWT_SECRET:-SGITU_G3_JWT_SECRET_KEY_CHANGE_ME_IN_PRODUCTION_256BITS!!}
     networks:
       - sgitu-network
       - g9-db-network
