@@ -121,7 +121,7 @@ Les agrégations produisent des documents `StatSnapshot` (collection `stat_snaps
 | Revenu journalier | `REV_TOTAL` &lt; 70 % de la moyenne 30 j | `LOW_DAILY_REVENUE` |
 | Zones à risque | `INC_REPEAT_ZONES` ≥ 1 | `INCIDENT_ZONE_RISK` |
 
-URL configurable : `g5.notification.url` (défaut `http://localhost:8085/api/notifications/send`). En cas d’indisponibilité de G5, le circuit breaker ouvre et les alertes sont journalisées (`sendFallback`).
+URL configurable : `g5.notification.url` (défaut `http://api-gateway:8080/api/notifications/send`). En cas d’indisponibilité de G5, le circuit breaker ouvre et les alertes sont journalisées (`sendFallback`).
 
 ### 3.5 Microservice ML (Python / FastAPI)
 

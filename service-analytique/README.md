@@ -16,7 +16,7 @@ The service runs scheduled jobs every 60 seconds to compute various metrics from
 *   **Subscriptions (SUB_*)**: Active subscriptions, new subscriptions, renewal rate, churn rate, subscription type distribution.
 
 ### 2. Alerts System
-*   **ThresholdAlertService**: Monitors incoming events and aggregations on every scheduler tick (every 60 seconds). If specific business rules are violated, it immediately sends targeted notifications to the **G5 Notification Service** (`http://localhost:8085/notifications`). *(Note: The G5 service may not be running locally, so connection refused errors in the logs are expected if it is offline).*
+*   **ThresholdAlertService**: Monitors incoming events and aggregations on every scheduler tick (every 60 seconds). If specific business rules are violated, it immediately sends targeted notifications to the **G5 Notification Service** via the API Gateway (`http://api-gateway:8080/api/notifications/send`). *(Note: The G5 service may not be running locally, so connection refused errors in the logs are expected if it is offline).*
 
 #### Configured Thresholds & Triggers:
 The service evaluates the following 5 critical thresholds:
