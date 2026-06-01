@@ -61,6 +61,8 @@ public class SecurityConfig {
                 // Existence check -- any authenticated service
                 .requestMatchers(HttpMethod.GET, "/users/*/exists").authenticated()
                 .requestMatchers(HttpMethod.GET, "/users/drivers/ids").authenticated()
+                // Allow G4 service to fetch notification recipients (requires ROLE_G4_OPERATOR or ROLE_G4_SERVICE in token)
+                .requestMatchers(HttpMethod.GET, "/users/notification-recipients").hasAnyRole("G4_SERVICE", "G4_OPERATOR")
 
                 // Admin endpoints
                 .requestMatchers(HttpMethod.GET, "/users").hasRole("ADMIN")
