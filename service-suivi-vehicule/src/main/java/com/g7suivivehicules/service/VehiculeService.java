@@ -2,10 +2,12 @@ package com.g7suivivehicules.service;
 
 import com.g7suivivehicules.dto.VehiculeRequest;
 import com.g7suivivehicules.dto.VehiculeResponse;
+import com.g7suivivehicules.dto.VehiculeRegisteredEvent;
 import com.g7suivivehicules.entity.Vehicule;
 import com.g7suivivehicules.exception.VehiculeNotFoundException;
-import jakarta.persistence.EntityNotFoundException;
+import com.g7suivivehicules.kafka.KafkaProducerService;
 import com.g7suivivehicules.repository.VehiculeRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,9 @@ import java.util.stream.Collectors;
 public class VehiculeService {
 
     private final VehiculeRepository vehiculeRepository;
+    private final KafkaProducerService kafkaProducerService;
+    private final com.g7suivivehicules.kafka.KafkaProducerService kafkaProducerService;
+    private final G5NotificationService g5NotificationService;
 
     @Transactional
     public VehiculeResponse createVehicule(VehiculeRequest request) {
@@ -35,8 +40,25 @@ public class VehiculeService {
                 .build();
 
         Vehicule saved = vehiculeRepository.save(vehicule);
+        VehiculeResponse response = mapToResponse(saved);
+
+        // Publication Kafka — notifie G4 et G8 de l'existence du nouveau véhicule
+        VehiculeRegisteredEvent event = VehiculeRegisteredEvent.builder()
+                .vehiculeId(saved.getId())
+                .immatriculation(saved.getImmatriculation())
+                .type(saved.getType())
+                .ligne(saved.getLigne())
+                .statut(saved.getStatut())
+                .conducteurId(saved.getConducteurId())
+                .createdAt(java.time.LocalDateTime.now())
+                .build();
+        kafkaProducerService.publierVehiculeEnregistre(event);
 
         return mapToResponse(saved);
+        // Notification G5 pour le conducteur/admin
+        g5NotificationService.notifierVehiculeEnregistre(response);
+
+        return response;
     }
 
     public List<VehiculeResponse> getAllVehicules() {
