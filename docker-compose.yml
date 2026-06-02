@@ -505,6 +505,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
+    hostname: prometheus
     ports:
       - "9090:9090"
     volumes:
@@ -515,6 +516,9 @@ services:
       - g7-service
       - user-service
       - g8-analytics-service
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
 
   grafana:
     image: grafana/grafana:latest
@@ -525,6 +529,12 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
     volumes:
       - grafana-data:/var/lib/grafana
+      # Configuration Prometeus DataSource
+      - ./service-paiement/monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      # Configuration Dashboards Provisioning
+      - ./service-paiement/monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      # Dashboards JSON
+      - ./service-paiement/monitoring/grafana/dashboards:/etc/grafana/dashboards:ro
     networks:
       - sgitu-network
     depends_on:
