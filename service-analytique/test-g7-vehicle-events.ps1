@@ -35,6 +35,7 @@ foreach ($container in $checks.Keys) {
     Add-Result "$($checks[$container]) container is ready" (Wait-ContainerHealthy -ContainerName $container -Timeout $TimeoutSeconds) $container
 }
 Add-Result "G8 health endpoint is reachable" (Wait-HttpOk -Url "http://localhost:8088/actuator/health" -Timeout $TimeoutSeconds)
+Add-Result "G7 health endpoint is reachable" (Wait-HttpOk -Url "http://localhost:8087/actuator/health" -Timeout $TimeoutSeconds)
 
 Write-Step "Trigger real vehicle actions"
 $vehicleId = $null

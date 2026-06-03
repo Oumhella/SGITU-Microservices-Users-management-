@@ -270,7 +270,7 @@ Current G7 code has an envoyerStatusG8 method, but normal vehicle/status/positio
 If vehicule-positions has data but g8.vehicule.status does not, the issue is missing sender wiring.
 ```
 
-**Status: FAIL (Sender Side)** - The `g7-service` drops the connection ("The underlying connection was closed unexpectedly") when the test script attempts to create a vehicle.
+**Status: FAIL (Sender Side)** - The `g7-service` successfully starts and creates the vehicle (test script race condition fixed), but it never publishes the event to `g8.vehicule.status`. The G7 team implemented the method `KafkaProducerService.envoyerStatusG8` but completely forgot to invoke it in their business logic (e.g., `VehiculeService`).
 
 ### Stage 4.5 Incidents
 
